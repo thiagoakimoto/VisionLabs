@@ -50,6 +50,14 @@ async function processImageInput(inputImage) {
   return Buffer.from(base64Data, 'base64');
 }
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb'
+    }
+  }
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
