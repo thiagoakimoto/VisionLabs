@@ -1,7 +1,7 @@
-import dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
-import https from 'https';
-import http from 'http';
+const dotenv = require('dotenv');
+const { GoogleGenAI } = require('@google/genai');
+const https = require('https');
+const http = require('http');
 
 dotenv.config();
 
@@ -50,15 +50,7 @@ async function processImageInput(inputImage) {
   return Buffer.from(base64Data, 'base64');
 }
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb'
-    }
-  }
-};
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -123,3 +115,11 @@ export default async function handler(req, res) {
     });
   }
 }
+
+module.exports.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb'
+    }
+  }
+};
