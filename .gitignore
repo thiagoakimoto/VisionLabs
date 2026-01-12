@@ -4,3 +4,4 @@ temp/
 *.mp4
 *.log
 .DS_Store
+.vercel

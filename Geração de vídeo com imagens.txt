@@ -1,0 +1,37 @@
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({});
+
+const prompt = "Panning wide shot of a calico kitten sleeping in the sunshine";
+
+// Step 1: Generate an image with Nano Banana.
+const imageResponse = await ai.models.generateContent({
+  model: "gemini-2.5-flash-image",
+  prompt: prompt,
+});
+
+// Step 2: Generate video with Veo 3.1 using the image.
+let operation = await ai.models.generateVideos({
+  model: "veo-3.1-generate-preview",
+  prompt: prompt,
+  image: {
+    imageBytes: imageResponse.generatedImages[0].image.imageBytes,
+    mimeType: "image/png",
+  },
+});
+
+// Poll the operation status until the video is ready.
+while (!operation.done) {
+  console.log("Waiting for video generation to complete...")
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+  operation = await ai.operations.getVideosOperation({
+    operation: operation,
+  });
+}
+
+// Download the video.
+ai.files.download({
+    file: operation.response.generatedVideos[0].video,
+    downloadPath: "veo3_with_image_input.mp4",
+});
+console.log(`Generated video saved to veo3_with_image_input.mp4`);
