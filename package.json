@@ -1,0 +1,19 @@
+{
+  "name": "genai-edit-and-animate",
+  "version": "1.0.0",
+  "description": "Middleware para edição de imagem e geração de vídeo com Google GenAI",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["genai", "veo", "gemini", "video", "image-editing"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^0.2.0",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  }
+}
