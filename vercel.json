@@ -2,14 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "server.js"
+      "src": "/api/edit-image",
+      "dest": "/api/edit-image.js"
+    },
+    {
+      "src": "/api/generate-video",
+      "dest": "/api/generate-video.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/",
+      "dest": "/server.js"
     }
   ]
 }
