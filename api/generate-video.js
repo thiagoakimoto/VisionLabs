@@ -1,6 +1,6 @@
 const { GoogleGenAI } = require('@google/genai');
-const { processImageInput } = require('./utils/imageProcessor');
-const applyCors = require('./middleware/cors');
+const { processImageInput } = require('../lib/imageProcessor');
+const applyCors = require('../lib/cors');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');

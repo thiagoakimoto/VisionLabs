@@ -1,6 +1,6 @@
 const { GoogleGenAI } = require('@google/genai');
-const { processImageInput } = require('./utils/imageProcessor');
-const applyCors = require('./middleware/cors');
+const { processImageInput } = require('../lib/imageProcessor');
+const applyCors = require('../lib/cors');
 require('dotenv').config();
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
