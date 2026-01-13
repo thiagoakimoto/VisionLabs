@@ -35,10 +35,18 @@ const handler = async (req, res) => {
 
     console.log('[VIDEO] Gerando... isso pode levar ~90 segundos.');
 
-    // Polling SEM limite de tentativas (já que roda em VPS)
+    // Polling SEM limite de tentativas
     while (!operation.done) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
       operation = await ai.operations.getVideosOperation({ operation });
+    }
+
+    console.log('[VIDEO] Operação completa. Verificando resposta...');
+    console.log('Response:', JSON.stringify(operation.response, null, 2));
+
+    // Verificar se há vídeos gerados
+    if (!operation.response || !operation.response.generatedVideos || operation.response.generatedVideos.length === 0) {
+      throw new Error('Nenhum vídeo foi gerado. Response: ' + JSON.stringify(operation.response));
     }
 
     // DOWNLOAD: Fundamental para o n8n conseguir ler o arquivo
