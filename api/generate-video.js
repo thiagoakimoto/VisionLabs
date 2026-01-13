@@ -8,7 +8,7 @@ require('dotenv').config();
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-module.exports = async (req, res) => {
+const handler = async (req, res) => {
   applyCors(req, res);
   
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -65,6 +65,7 @@ module.exports = async (req, res) => {
   }
 };
 
+module.exports = handler;
 module.exports.config = {
   api: {
     bodyParser: {
