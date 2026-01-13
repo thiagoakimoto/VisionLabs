@@ -32,7 +32,7 @@ const handler = async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-2.5-flash-nano-banana-3-image-pro-preview',
       contents: [{ role: 'user', parts: parts }]
     });
 
