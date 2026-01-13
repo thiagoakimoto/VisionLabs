@@ -1,5 +1,6 @@
 const { GoogleGenAI } = require('@google/genai');
 const { processImageInput } = require('../lib/imageProcessor');
+const { uploadToImgur } = require('../lib/imageUpload');
 const applyCors = require('../lib/cors');
 require('dotenv').config();
 
@@ -47,7 +48,16 @@ const handler = async (req, res) => {
           res.setHeader('Content-Type', 'image/png');
           res.setHeader('Content-Disposition', 'attachment; filename="edited.png"');
           return res.send(buffer);
+        } else if (returnFormat === 'url') {
+          // Upload para Imgur e retorna URL
+          const imageUrl = await uploadToImgur(imageData);
+          return res.json({
+            success: true,
+            imageUrl: imageUrl,
+            format: 'url'
+          });
         } else {
+          // Retorna Base64 (padrão)
           return res.json({
             success: true,
             image: `data:image/png;base64,${imageData}`,
