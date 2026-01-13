@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { inputImage, prompt, returnFormat = 'base64' } = req.body;
+    const { inputImage, image_urls, prompt, returnFormat = 'base64' } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Campo "prompt" é obrigatório' });
@@ -74,8 +74,11 @@ module.exports = async function handler(req, res) {
 
     let parts = [{ text: prompt }];
 
-    if (inputImage) {
-      const imageBuffer = await processImageInput(inputImage);
+    // Aceita tanto inputImage (string) quanto image_urls (array)
+    const imageUrl = inputImage || (image_urls && image_urls[0]);
+    
+    if (imageUrl) {
+      const imageBuffer = await processImageInput(imageUrl);
       parts.push({
         inlineData: {
           mimeType: 'image/png',

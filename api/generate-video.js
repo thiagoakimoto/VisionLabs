@@ -66,16 +66,19 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { inputImage, prompt } = req.body;
+    const { inputImage, image_urls, prompt } = req.body;
 
-    if (!inputImage) {
-      return res.status(400).json({ error: 'Campo "inputImage" é obrigatório' });
+    // Aceita tanto inputImage (string) quanto image_urls (array)
+    const imageUrl = inputImage || (image_urls && image_urls[0]);
+    
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'Campo "inputImage" ou "image_urls" é obrigatório' });
     }
     if (!prompt) {
       return res.status(400).json({ error: 'Campo "prompt" é obrigatório' });
     }
 
-    const imageBuffer = await processImageInput(inputImage);
+    const imageBuffer = await processImageInput(imageUrl);
 
     let operation = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
