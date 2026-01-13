@@ -1,12 +1,18 @@
-const express = require('express');
-const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
-const { processImageInput } = require('./utils'); // Importa do utils
+const { processImageInput } = require('./utils');
 require('dotenv').config();
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-router.post('/edit-image', async (req, res) => {
+module.exports = async (req, res) => {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
   try {
     const { prompt, returnFormat = 'base64' } = req.body;
 
@@ -60,6 +66,12 @@ router.post('/edit-image', async (req, res) => {
     console.error('ERRO:', error);
     res.status(500).json({ error: error.message });
   }
-});
+};
 
-module.exports = router;
+module.exports.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb'
+    }
+  }
+};

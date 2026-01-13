@@ -1,5 +1,3 @@
-const express = require('express');
-const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
 const { processImageInput } = require('./utils');
 const fs = require('fs');
@@ -9,8 +7,15 @@ require('dotenv').config();
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-router.post('/generate-video', async (req, res) => {
-  // Cria caminho temporário seguro
+module.exports = async (req, res) => {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
   const tempFilePath = path.join(os.tmpdir(), `video_${Date.now()}.mp4`);
 
   try {
@@ -60,6 +65,12 @@ router.post('/generate-video', async (req, res) => {
     try { fs.unlinkSync(tempFilePath); } catch(e){}
     res.status(500).json({ error: error.message });
   }
-});
+};
 
-module.exports = router;
+module.exports.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb'
+    }
+  }
+};
