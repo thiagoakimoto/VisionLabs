@@ -1,84 +1,23 @@
-const dotenv = require('dotenv');
+const express = require('express');
+const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
-const https = require('https');
-const http = require('http');
+const { processImageInput } = require('./utils'); // Importa do utils
+require('dotenv').config();
 
-dotenv.config();
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_API_KEY
-});
-
-function convertGoogleDriveUrl(url) {
-  const patterns = [
-    /drive\.google\.com\/file\/d\/([^\/]+)/,
-    /drive\.google\.com\/open\?id=([^&]+)/,
-    /drive\.google\.com\/uc\?id=([^&]+)/
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-  }
-  return url;
-}
-
-async function downloadImage(imageUrl) {
-  return new Promise((resolve, reject) => {
-    const url = convertGoogleDriveUrl(imageUrl);
-    const client = url.startsWith('https') ? https : http;
-    client.get(url, { headers: { 'User-Agent': 'Node.js' } }, (response) => {
-      if (response.statusCode === 301 || response.statusCode === 302) {
-        return downloadImage(response.headers.location).then(resolve).catch(reject);
-      }
-      if (response.statusCode !== 200) {
-        reject(new Error(`Erro ao baixar imagem: HTTP ${response.statusCode}`));
-        return;
-      }
-      const chunks = [];
-      response.on('data', (chunk) => chunks.push(chunk));
-      response.on('end', () => resolve(Buffer.concat(chunks)));
-    }).on('error', reject);
-  });
-}
-
-async function processImageInput(inputImage) {
-  if (inputImage.startsWith('http://') || inputImage.startsWith('https://')) {
-    const imageBuffer = await downloadImage(inputImage);
-    return imageBuffer;
-  }
-  const base64Data = inputImage.replace(/^data:image\/\w+;base64,/, '');
-  return Buffer.from(base64Data, 'base64');
-}
-
-module.exports = async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+router.post('/edit-image', async (req, res) => {
   try {
-    const { inputImage, image_urls, prompt, returnFormat = 'base64' } = req.body;
+    const { prompt, returnFormat = 'base64' } = req.body;
 
-    if (!prompt) {
-      return res.status(400).json({ error: 'Campo "prompt" é obrigatório' });
-    }
+    if (!prompt) return res.status(400).json({ error: 'Campo "prompt" é obrigatório' });
 
     let parts = [{ text: prompt }];
-
-    // Aceita tanto inputImage (string) quanto image_urls (array)
-    const imageUrl = inputImage || (image_urls && image_urls[0]);
     
-    if (imageUrl) {
-      const imageBuffer = await processImageInput(imageUrl);
+    // Processa a imagem usando o utils
+    const imageBuffer = await processImageInput(req.body);
+
+    if (imageBuffer) {
       parts.push({
         inlineData: {
           mimeType: 'image/png',
@@ -93,15 +32,16 @@ module.exports = async function handler(req, res) {
     });
 
     const candidate = response.candidates?.[0]?.content?.parts;
-    if (!candidate) throw new Error('Sem candidatos na resposta');
+    if (!candidate) throw new Error('Sem resposta da IA');
 
     for (const part of candidate) {
       if (part.inlineData) {
         const imageData = part.inlineData.data;
+        
         if (returnFormat === 'file') {
           const buffer = Buffer.from(imageData, 'base64');
           res.setHeader('Content-Type', 'image/png');
-          res.setHeader('Content-Disposition', 'attachment; filename="generated_image.png"');
+          res.setHeader('Content-Disposition', 'attachment; filename="edited.png"');
           return res.send(buffer);
         } else {
           return res.json({
@@ -112,27 +52,14 @@ module.exports = async function handler(req, res) {
         }
       }
     }
-
+    
     const textPart = candidate.find(p => p.text);
-    if (textPart) {
-      throw new Error(`Modelo retornou apenas texto: ${textPart.text}`);
-    }
-
-    throw new Error('Nenhuma imagem foi gerada');
+    throw new Error(textPart ? `IA Recusou: ${textPart.text}` : 'Erro desconhecido');
 
   } catch (error) {
     console.error('ERRO:', error);
-    return res.status(500).json({
-      error: 'Erro ao processar requisição',
-      message: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
-}
+});
 
-module.exports.config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb'
-    }
-  }
-};
+module.exports = router;
