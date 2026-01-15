@@ -30,8 +30,7 @@ const handler = async (req, res) => {
       image: {
         imageBytes: imageBuffer.toString('base64'),
         mimeType: 'image/png'
-      },
-      durationSeconds: 60  // Máximo suportado: 60 segundos
+      }
     });
 
     console.log('[VIDEO] Gerando... isso pode levar ~90 segundos.');
