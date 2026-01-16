@@ -1,5 +1,4 @@
 const { GoogleGenAI } = require('@google/genai');
-const { processImageInput } = require('../lib/imageProcessor');
 const applyCors = require('../lib/cors');
 const fs = require('fs');
 const path = require('path');
@@ -14,26 +13,24 @@ const handler = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const tempFilePath = path.join(os.tmpdir(), `video_${Date.now()}.mp4`);
+  const tempFilePath = path.join(os.tmpdir(), `extended_video_${Date.now()}.mp4`);
 
   try {
-    const { prompt } = req.body;
-    const imageBuffer = await processImageInput(req.body);
+    const { videoId, prompt } = req.body;
 
-    if (!imageBuffer) return res.status(400).json({ error: 'Imagem obrigatória' });
+    if (!videoId) return res.status(400).json({ error: 'videoId obrigatório (ex: files/abc123...)' });
     if (!prompt) return res.status(400).json({ error: 'Prompt obrigatório' });
 
-    // Inicia geração
+    console.log('[EXTEND] Estendendo vídeo:', videoId);
+
+    // Inicia extensão usando o vídeo anterior
     let operation = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
       prompt: prompt,
-      image: {
-        imageBytes: imageBuffer.toString('base64'),
-        mimeType: 'image/png'
-      }
+      video: { uri: videoId }  // Referência ao vídeo gerado anteriormente
     });
 
-    console.log('[VIDEO] Gerando... isso pode levar ~90 segundos.');
+    console.log('[EXTEND] Gerando extensão... isso pode levar ~90 segundos.');
 
     // Polling SEM limite de tentativas
     while (!operation.done) {
@@ -41,7 +38,7 @@ const handler = async (req, res) => {
       operation = await ai.operations.getVideosOperation({ operation });
     }
 
-    console.log('[VIDEO] Operação completa. Verificando resposta...');
+    console.log('[EXTEND] Operação completa. Verificando resposta...');
     console.log('Response:', JSON.stringify(operation.response, null, 2));
 
     // Verificar se há vídeos gerados
@@ -49,21 +46,22 @@ const handler = async (req, res) => {
       throw new Error('Nenhum vídeo foi gerado. Response: ' + JSON.stringify(operation.response));
     }
 
-    // DOWNLOAD: Fundamental para o n8n conseguir ler o arquivo
+    // DOWNLOAD: Baixa o vídeo estendido
     await ai.files.download({
         file: operation.response.generatedVideos[0].video,
         downloadPath: tempFilePath,
     });
 
-    // Captura videoId para permitir extensões futuras
-    const videoId = operation.response.generatedVideos[0].video.uri;
-    console.log('[VIDEO] VideoId gerado:', videoId);
+    console.log('[EXTEND] Vídeo estendido salvo. Enviando...');
+
+    // Retorna videoId para permitir extensões encadeadas
+    const newVideoId = operation.response.generatedVideos[0].video.uri;
 
     // Envia o arquivo como stream
     const videoStream = fs.createReadStream(tempFilePath);
     res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Content-Disposition', 'attachment; filename="video_gerado.mp4"');
-    res.setHeader('X-Video-Id', videoId);  // Header com videoId para extensões
+    res.setHeader('Content-Disposition', 'attachment; filename="video_estendido.mp4"');
+    res.setHeader('X-Video-Id', newVideoId);  // Header com novo videoId
     videoStream.pipe(res);
 
     // Limpeza após envio
