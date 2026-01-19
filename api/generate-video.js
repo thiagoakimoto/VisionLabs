@@ -17,7 +17,7 @@ const handler = async (req, res) => {
   const tempFilePath = path.join(os.tmpdir(), `video_${Date.now()}.mp4`);
 
   try {
-    const { prompt, returnFormat = 'file' } = req.body;
+    const { prompt, returnFormat = 'file', aspectRatio = '16:9' } = req.body;
     const imageBuffer = await processImageInput(req.body);
 
     if (!imageBuffer) return res.status(400).json({ error: 'Imagem obrigatória' });
@@ -30,6 +30,10 @@ const handler = async (req, res) => {
       image: {
         imageBytes: imageBuffer.toString('base64'),
         mimeType: 'image/png'
+      },
+      config: {
+        aspectRatio: aspectRatio,  // '9:16' para retrato ou '16:9' para paisagem
+        resolution: '720p'
       }
     });
 

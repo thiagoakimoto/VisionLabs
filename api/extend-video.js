@@ -16,7 +16,7 @@ const handler = async (req, res) => {
   const tempFilePath = path.join(os.tmpdir(), `extended_video_${Date.now()}.mp4`);
 
   try {
-    const { videoId, prompt } = req.body;
+    const { videoId, prompt, aspectRatio = '16:9' } = req.body;
 
     if (!videoId) return res.status(400).json({ error: 'videoId obrigatório (ex: files/abc123...)' });
     if (!prompt) return res.status(400).json({ error: 'Prompt obrigatório' });
@@ -27,7 +27,11 @@ const handler = async (req, res) => {
     let operation = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
       prompt: prompt,
-      video: { uri: videoId }  // Referência ao vídeo gerado anteriormente
+      video: { uri: videoId },  // Referência ao vídeo gerado anteriormente
+      config: {
+        aspectRatio: aspectRatio,  // '9:16' para retrato ou '16:9' para paisagem
+        resolution: '720p'
+      }
     });
 
     console.log('[EXTEND] Gerando extensão... isso pode levar ~90 segundos.');
