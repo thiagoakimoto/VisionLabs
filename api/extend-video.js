@@ -23,11 +23,18 @@ const handler = async (req, res) => {
 
     console.log('[EXTEND] Estendendo vídeo:', videoId);
 
+    // Constrói URL completa se receber apenas files/FILE_ID
+    const videoUri = videoId.startsWith('http') 
+      ? videoId 
+      : `https://generativelanguage.googleapis.com/v1beta/${videoId}:download?alt=media`;
+    
+    console.log('[EXTEND] URI completa:', videoUri);
+
     // Inicia extensão usando o vídeo anterior
     let operation = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
       prompt: prompt,
-      video: { uri: videoId },  // Referência ao vídeo gerado anteriormente
+      video: { uri: videoUri },  // Referência ao vídeo gerado anteriormente
       config: {
         aspectRatio: aspectRatio,  // '9:16' para retrato ou '16:9' para paisagem
         resolution: '720p'
