@@ -17,7 +17,7 @@ const handler = async (req, res) => {
   const tempFilePath = path.join(os.tmpdir(), `video_${Date.now()}.mp4`);
 
   try {
-    const { prompt } = req.body;
+    const { prompt, returnFormat = 'file' } = req.body;
     const imageBuffer = await processImageInput(req.body);
 
     if (!imageBuffer) return res.status(400).json({ error: 'Imagem obrigatória' });
@@ -59,7 +59,20 @@ const handler = async (req, res) => {
     const videoId = operation.response.generatedVideos[0].video.uri;
     console.log('[VIDEO] VideoId gerado:', videoId);
 
-    // Envia o arquivo como stream
+    // Se returnFormat for base64, retorna JSON com videoId
+    if (returnFormat === 'base64') {
+      const videoBase64 = fs.readFileSync(tempFilePath, { encoding: 'base64' });
+      try { fs.unlinkSync(tempFilePath); } catch(e){}
+      
+      return res.status(200).json({
+        success: true,
+        video: `data:video/mp4;base64,${videoBase64}`,
+        videoId: videoId,
+        format: 'base64'
+      });
+    }
+
+    // Envia o arquivo como stream (padrão)
     const videoStream = fs.createReadStream(tempFilePath);
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Disposition', 'attachment; filename="video_gerado.mp4"');
