@@ -61,7 +61,9 @@ const handler = async (req, res) => {
 
     // Captura videoId completo para permitir extensões futuras
     const videoId = operation.response.generatedVideos[0].video.uri;
+    const usageMetadata = operation.response.usageMetadata || {};
     console.log('[VIDEO] VideoId gerado:', videoId);
+    console.log('[VIDEO] Uso:', JSON.stringify(usageMetadata, null, 2));
 
     // Se returnFormat for base64, retorna JSON com videoId
     if (returnFormat === 'base64') {
@@ -72,7 +74,8 @@ const handler = async (req, res) => {
         success: true,
         video: `data:video/mp4;base64,${videoBase64}`,
         videoId: videoId,
-        format: 'base64'
+        format: 'base64',
+        usage: usageMetadata  // Informações de tokens/custo
       });
     }
 
@@ -81,6 +84,7 @@ const handler = async (req, res) => {
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Disposition', 'attachment; filename="video_gerado.mp4"');
     res.setHeader('X-Video-Id', videoId);  // Header com videoId para extensões
+    res.setHeader('X-Usage-Metadata', JSON.stringify(usageMetadata));  // Dados de uso
     videoStream.pipe(res);
 
     // Limpeza após envio
