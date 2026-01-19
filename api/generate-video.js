@@ -55,8 +55,9 @@ const handler = async (req, res) => {
         downloadPath: tempFilePath,
     });
 
-    // Captura videoId para permitir extensões futuras
-    const videoId = operation.response.generatedVideos[0].video.uri;
+    // Captura videoId para permitir extensões futuras (remove :download params)
+    const rawVideoId = operation.response.generatedVideos[0].video.uri;
+    const videoId = rawVideoId.split(':')[0];  // Remove :download?alt=media
     console.log('[VIDEO] VideoId gerado:', videoId);
 
     // Se returnFormat for base64, retorna JSON com videoId
