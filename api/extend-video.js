@@ -60,7 +60,10 @@ const handler = async (req, res) => {
 
     // Retorna videoId para permitir extensões encadeadas (remove :download params)
     const rawNewVideoId = operation.response.generatedVideos[0].video.uri;
-    const newVideoId = rawNewVideoId.split(':')[0];  // Remove :download?alt=media
+    // Extrai apenas files/FILE_ID da URL completa
+    const newVideoId = rawNewVideoId.includes('/files/') 
+      ? 'files/' + rawNewVideoId.split('/files/')[1].split(':')[0]
+      : rawNewVideoId.split(':')[0];
 
     // Envia o arquivo como stream
     const videoStream = fs.createReadStream(tempFilePath);

@@ -61,7 +61,10 @@ const handler = async (req, res) => {
 
     // Captura videoId para permitir extensões futuras (remove :download params)
     const rawVideoId = operation.response.generatedVideos[0].video.uri;
-    const videoId = rawVideoId.split(':')[0];  // Remove :download?alt=media
+    // Extrai apenas files/FILE_ID da URL completa
+    const videoId = rawVideoId.includes('/files/') 
+      ? 'files/' + rawVideoId.split('/files/')[1].split(':')[0]
+      : rawVideoId.split(':')[0];
     console.log('[VIDEO] VideoId gerado:', videoId);
 
     // Se returnFormat for base64, retorna JSON com videoId
