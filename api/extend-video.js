@@ -65,12 +65,8 @@ const handler = async (req, res) => {
 
     console.log('[EXTEND] Vídeo estendido salvo. Enviando...');
 
-    // Retorna videoId para permitir extensões encadeadas (remove :download params)
-    const rawNewVideoId = operation.response.generatedVideos[0].video.uri;
-    // Extrai apenas files/FILE_ID da URL completa
-    const newVideoId = rawNewVideoId.includes('/files/') 
-      ? 'files/' + rawNewVideoId.split('/files/')[1].split(':')[0]
-      : rawNewVideoId.split(':')[0];
+    // Retorna videoId completo para permitir extensões encadeadas
+    const newVideoId = operation.response.generatedVideos[0].video.uri;
 
     // Envia o arquivo como stream
     const videoStream = fs.createReadStream(tempFilePath);
