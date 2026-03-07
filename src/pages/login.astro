@@ -1,0 +1,37 @@
+---
+import '../styles/global.css';
+import '../styles/login.css';
+import { LoginForm } from '../components/LoginForm';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VisionLabs | Sign In</title>
+  </head>
+  <body class="login-body">
+    <div class="login-container">
+      {/* Left: Branding panel */}
+      <div class="login-brand-panel">
+        <div class="login-brand-bg"></div>
+        <div class="login-brand-content">
+          <a href="/" class="brand">
+            <div class="brand-icon"></div>
+            VisionLab
+          </a>
+          <div class="login-brand-text">
+            <h2>AI Automation,<br/><span class="highlight">Made Human</span></h2>
+            <p>Transform your concepts into high-fidelity visual assets with generative intelligence.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Login form React component */}
+      <div class="login-form-panel">
+        <LoginForm client:load />
+      </div>
+    </div>
+  </body>
+</html>

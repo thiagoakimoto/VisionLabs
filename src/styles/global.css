@@ -1,0 +1,329 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400&display=swap');
+
+:root {
+  --primary: #e27241;
+  --bg-dark: #000000;
+  --text-light: #fff6f6;
+  --text-white: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  background-color: var(--bg-dark);
+  color: var(--text-white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* --- Typography --- */
+
+h1 {
+  font-size: clamp(48px, 5vw, 80px);
+  line-height: 1.1;
+  letter-spacing: -0.48px;
+  font-weight: 300;
+  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  text-align: left;
+}
+
+h1 .highlight {
+  color: var(--primary);
+  display: block;
+}
+
+p.description {
+  font-size: clamp(20px, 2vw, 32px);
+  line-height: 1.5;
+  letter-spacing: -0.28px;
+  font-weight: 300;
+  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  text-align: left;
+}
+
+.nav-link {
+  font-size: clamp(15px, 1.3vw, 20px);
+  letter-spacing: -0.22px;
+  font-weight: 300;
+  color: var(--text-white);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  padding-bottom: 4px;
+  transition: color 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.brand {
+  font-size: clamp(20px, 1.8vw, 26px);
+  letter-spacing: -0.24px;
+  font-weight: 400;
+  color: var(--text-white);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-started {
+  font-size: clamp(18px, 1.6vw, 24px);
+  letter-spacing: -0.28px;
+  font-weight: 300;
+  color: var(--text-light);
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 4px;
+  transition: color 0.3s ease;
+}
+
+.btn-started::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.btn-started:hover {
+  color: var(--primary);
+}
+
+.btn-started:hover::after {
+  width: 100%;
+}
+
+/* --- Layout --- */
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  height: 500vh;
+  /* Extended height for scroll animation */
+}
+
+.hero-sticky {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#hero-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: none;
+  /* Shown when frames are loaded */
+}
+
+.hero-fallback-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* Reduced motion: collapse scroll height */
+@media (prefers-reduced-motion: reduce) {
+  .hero-section {
+    height: 100vh;
+  }
+
+  #hero-canvas {
+    display: none;
+  }
+
+  .hero-fallback-image {
+    display: block;
+  }
+}
+
+/* Top Navigation */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 60px;
+  width: 100%;
+  z-index: 10;
+  position: relative;
+}
+
+.nav-center {
+  display: flex;
+  gap: 48px;
+  align-items: center;
+}
+
+.brand-icon {
+  width: 24px;
+  height: 24px;
+  background-color: var(--primary);
+  border: none;
+  border-radius: 6px;
+  position: relative;
+}
+
+.brand-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid white;
+}
+
+/* Center Content Area */
+.hero-content {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  z-index: 10;
+}
+
+/* 
+  Figma coordinates (frame 1615x906):
+  Title:       x=164, y=356, w=502, h=192
+  Description: x=903, y=723, w=613, h=149
+  Sign In:     x=98,  y=782
+  
+  Converting to percentages:
+  Title:       left=10.15%, top=39.29%
+  Description: left=55.89%, top=79.80%
+  Sign In:     left=6.07%,  top=86.31%
+*/
+
+.hero-title {
+  position: absolute;
+  left: 10.15%;
+  top: 39.29%;
+  transform: translateY(-50%);
+  width: 31.08%;
+  /* 502/1615 */
+}
+
+.hero-desc {
+  position: absolute;
+  left: 60%;
+  top: 26%;
+  transform: translateY(-50%);
+  width: 33%;
+  /* Elevado explicitamente para não encobrir as silhuetas no rodapé */
+}
+
+.get-started-left {
+  position: absolute;
+  left: 6.07%;
+  bottom: 13.69%;
+  /* (906-782)/906 */
+}
+
+/* Generic Arrow Icon */
+.arrow-down {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg);
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-title {
+  animation: fadeIn 0.8s ease-out 0.2s both;
+}
+
+.hero-desc {
+  animation: fadeIn 0.8s ease-out 0.5s both;
+}
+
+.get-started-left {
+  animation: fadeIn 0.8s ease-out 0.8s both;
+}
+
+.navbar {
+  animation: fadeIn 0.8s ease-out both;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero-title {
+    left: 5%;
+    top: 30%;
+    width: 80%;
+  }
+
+  .hero-desc {
+    left: 5%;
+    top: auto;
+    bottom: 8%;
+    transform: none;
+    width: 90%;
+  }
+
+  .nav-center {
+    display: none;
+  }
+
+  .get-started-left {
+    display: none;
+  }
+
+  .navbar {
+    padding: 16px 20px;
+  }
+}

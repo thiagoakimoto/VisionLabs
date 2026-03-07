@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionLabs | AI Automation, Made Human</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <!-- Hero with scroll-driven video animation -->
+    <section class="hero-section" id="hero">
+        <div class="hero-sticky">
+            <canvas id="hero-canvas"></canvas>
+            <!-- Fallback image for reduced-motion users -->
+            <img src="./media/frames/frame_0001.jpg" alt="VisionLabs" class="hero-fallback-image" id="hero-fallback">
+
+            <nav class="navbar">
+                <a href="#" class="brand">
+                    <div class="brand-icon"></div>
+                    VisionLab
+                </a>
+                <div class="nav-center">
+                    <a href="#" class="nav-link">Features <span class="arrow-down"></span></a>
+                    <a href="#" class="nav-link">How it works</a>
+                    <a href="#" class="nav-link">Pricing</a>
+                </div>
+                <a href="./login.html" class="btn-started">Sign In</a>
+            </nav>
+
+            <div class="hero-content">
+                <div class="hero-title">
+                    <h1>AI Automation, <span class="highlight">Made Human</span></h1>
+                </div>
+                <div class="hero-desc">
+                    <p class="description">Vision Labs is an integrated generative intelligence platform designed to
+                        transform concepts into high-fidelity visual assets.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const canvas = document.getElementById('hero-canvas');
+        const context = canvas.getContext('2d');
+        const heroSection = document.getElementById('hero');
+        const fallbackImg = document.getElementById('hero-fallback');
+
+        const frameCount = 96;
+        const images = [];
+        let animationReady = false;
+
+        // Resize canvas to fill viewport
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // Draw frame with object-fit: cover simulation + slight zoom to crop watermark
+        function drawFrame(index) {
+            if (!images[index - 1] || !images[index - 1].complete) return;
+            const img = images[index - 1];
+
+            const zoom = 1.06; // Slight zoom to crop out watermark in bottom-right
+            const canvasRatio = canvas.width / canvas.height;
+            const imgRatio = img.width / img.height;
+            let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+
+            if (canvasRatio > imgRatio) {
+                drawWidth = canvas.width * zoom;
+                drawHeight = drawWidth / imgRatio;
+            } else {
+                drawHeight = canvas.height * zoom;
+                drawWidth = drawHeight * imgRatio;
+            }
+
+            offsetX = (canvas.width - drawWidth) / 2;
+            offsetY = (canvas.height - drawHeight) / 2;
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+        }
+
+        // Get frame index from scroll position
+        function getCurrentFrameIndex() {
+            const scrollTop = window.scrollY;
+            const maxScrollTop = heroSection.scrollHeight - window.innerHeight;
+            if (maxScrollTop <= 0) return 1;
+
+            const scrollFraction = Math.max(0, Math.min(1, scrollTop / maxScrollTop));
+            const frameIndex = Math.min(frameCount - 1, Math.floor(scrollFraction * frameCount));
+            return frameIndex + 1;
+        }
+
+        // Scroll listener with requestAnimationFrame
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking && animationReady) {
+                window.requestAnimationFrame(() => {
+                    const frameIndex = getCurrentFrameIndex();
+                    drawFrame(frameIndex);
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+
+        // Preload all frames
+        function preloadImages() {
+            let loadedCount = 0;
+            for (let i = 1; i <= frameCount; i++) {
+                const img = new Image();
+                img.src = `./media/frames/frame_${String(i).padStart(4, '0')}.jpg`;
+                img.onload = () => {
+                    loadedCount++;
+                    if (loadedCount === frameCount) {
+                        animationReady = true;
+                        fallbackImg.style.display = 'none';
+                        canvas.style.display = 'block';
+                        drawFrame(1);
+                    }
+                };
+                images.push(img);
+            }
+        }
+
+        // Accessibility: reduced-motion preference
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (!prefersReducedMotion && canvas) {
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                const frameIndex = getCurrentFrameIndex();
+                drawFrame(frameIndex);
+            });
+            preloadImages();
+        } else {
+            canvas.style.display = 'none';
+            fallbackImg.style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>

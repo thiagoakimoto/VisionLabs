@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Navbar } from '../components/Navbar';
+import { ScrollCanvas } from '../components/ScrollCanvas';
+
+import FeaturesComponent from '../figma-exports/app/pages/Features';
+import HowItWorksComponent from '../figma-exports/app/pages/HowItWorks';
+import PricingComponent from '../figma-exports/app/pages/Pricing';
+
+// Import local tailwind for the generated blocks
+import '../figma-exports/styles/tailwind.css';
+---
+
+<Layout title="VisionLabs | AI Automation, Made Human">
+  <section class="hero-section" id="hero">
+    <div class="hero-sticky">
+      {/* Scroll-driven video animation mounted here */}
+      <ScrollCanvas client:only="react" frameCount={96} />
+
+      {/* Persistent overlay contents on top of canvas */}
+      <nav style="position: relative; z-index: 50; width: 100%;">
+          <Navbar />
+      </nav>
+
+      <div class="hero-content">
+        <div class="hero-title mt-4">
+          <h1 class="text-4xl md:text-5xl lg:text-[60px] leading-[1.1] tracking-tight font-light text-white mb-6 drop-shadow-xl">AI Automation,<br /> <span class="highlight text-[#e27241]">Made Human</span></h1>
+        </div>
+        <div class="hero-desc">
+          <p class="description text-base md:text-xl lg:text-[24px] leading-snug font-light text-white/90 drop-shadow-lg">Transform your concepts into high-fidelity visual assets with generative intelligence.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* Single Page Sections - Z-index para sobrepor ao scroll finalizado se necessário, ou fluir na ordem */}
+  {/* Single Page Sections */}
+  <section id="features" class="relative z-20 bg-[#0a0a0a] fade-in-section opacity-0 translate-y-12 transition-all duration-[1200ms] ease-out">
+      <FeaturesComponent client:load />
+  </section>
+
+  <section id="how-it-works" class="relative z-20 bg-[#0a0a0a] fade-in-section opacity-0 translate-y-12 transition-all duration-[1200ms] ease-out">
+      <HowItWorksComponent client:load />
+  </section>
+
+  <section id="pricing" class="relative z-20 bg-[#0a0a0a] fade-in-section opacity-0 translate-y-12 transition-all duration-[1200ms] ease-out">
+      <PricingComponent client:load />
+  </section>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.remove('opacity-0', 'translate-y-12');
+            entry.target.classList.add('opacity-100', 'translate-y-0');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      document.querySelectorAll('.fade-in-section').forEach((el) => {
+        observer.observe(el);
+      });
+    });
+  </script>
+</Layout>
