@@ -27,6 +27,7 @@ const v2e = (handler) => async (req, res) => {
 // Rotas mapeadas a partir dos arquivos originais em /api
 // app.all('/', v2e(require('./api/index.js'))); // Moved API index to a different route to free up static HTML
 app.all('/api', v2e(require('./api/index.js')));
+app.use('/api/auth', v2e(require('./api/auth.js'))); // Registro do roteador de autenticação
 app.all('/api/edit-image', v2e(require('./api/edit-image.js')));
 app.all('/api/generate-video', v2e(require('./api/generate-video.js')));
 app.all('/api/extend-video', v2e(require('./api/extend-video.js')));

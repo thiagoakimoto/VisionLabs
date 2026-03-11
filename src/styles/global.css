@@ -245,11 +245,11 @@ p.description {
 
 .hero-desc {
   position: absolute;
-  left: 60%;
-  top: 26%;
+  left: 66%;
+  top: 39.29%;
   transform: translateY(-50%);
-  width: 33%;
-  /* Elevado explicitamente para não encobrir as silhuetas no rodapé */
+  width: 29%;
+  /* Alinhado na mesma linha horizontal do título e recuado à direita do portal */
 }
 
 .get-started-left {
