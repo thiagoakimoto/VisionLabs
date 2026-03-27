@@ -36,7 +36,7 @@ export const LoginForm: React.FC = () => {
             // Caso seja login ou registro feito com token, salvar na sessão e redirecionar
             if (data.token) {
                 localStorage.setItem('visionlabs_token', data.token);
-                // Pode redirecionar para dashboard em breve: window.location.href = '/dashboard';
+                window.location.href = '/';
             }
 
         } catch (err: any) {

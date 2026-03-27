@@ -1,0 +1,99 @@
+---
+import '../styles/global.css';
+import { SettingsForm } from '../components/settings/SettingsForm';
+---
+
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>VisionLab | Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <style>
+        body { background-color: #0a0a0a; color: #e5e2e1; font-family: 'Outfit', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+        .ghost-border { border: 1px solid rgba(88, 66, 53, 0.15); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(226, 114, 65, 0.1); border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col selection:bg-[#e27241]/30 selection:text-white">
+
+    <script>
+        if (!localStorage.getItem('visionlabs_token')) window.location.href = '/login';
+    </script>
+
+    <header class="w-full h-16 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-3xl flex justify-between items-center px-8 border-b border-white/5">
+        <div class="flex items-center gap-6">
+            <span class="text-lg font-black text-white tracking-tighter uppercase">VisionLabs</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 pl-4 border-l border-white/10">
+                <div class="w-8 h-8 rounded-full overflow-hidden border border-[#e27241]/20">
+                    <img class="w-full h-full object-cover" src="/media/chat/avatar1.jpg" alt="User Profile"/>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+            <div class="absolute -top-1/4 -right-1/4 w-1/2 h-1/2 bg-[#e27241]/5 blur-[120px] rounded-full"></div>
+        </div>
+
+        <aside class="h-screen w-64 bg-[#0a0a0a] border-r border-[#e27241]/15 flex flex-col p-4 gap-2 z-10 tracking-tight flex-shrink-0">
+            <div class="mb-8 px-4 pt-2">
+                <h2 class="text-xl font-bold text-[#e27241] tracking-tighter">Atmospheric AI</h2>
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Cinematic Engine</p>
+            </div>
+            <div class="flex flex-col gap-1 flex-1">
+                <a href="/" class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-200 transition-colors hover:bg-white/5 transition-all">
+                    <span class="material-symbols-outlined">add_box</span>
+                    <span class="text-sm font-medium">New Generation</span>
+                </a>
+                <a href="/projects" class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-200 transition-colors hover:bg-white/5 transition-all">
+                    <span class="material-symbols-outlined">history</span>
+                    <span class="text-sm font-medium">Recent Projects</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-200 transition-colors hover:bg-white/5 transition-all">
+                    <span class="material-symbols-outlined">subscriptions</span>
+                    <span class="text-sm font-medium">Assets Library</span>
+                </a>
+                <a href="/settings" class="flex items-center gap-3 px-4 py-3 bg-[#e27241]/10 text-[#e27241] rounded-lg border border-[#e27241]/20">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="text-sm font-medium">Settings</span>
+                </a>
+            </div>
+            <div class="mt-auto border-t border-white/5 pt-4 space-y-1">
+                <button id="logout-btn" class="w-full flex items-center gap-3 px-4 py-3 text-red-500/70 hover:text-red-400 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">logout</span>
+                    <span class="text-sm font-medium">Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col relative z-10 overflow-y-auto">
+            <div class="px-8 py-6 border-b border-white/5 flex-shrink-0">
+                <h1 class="text-3xl font-bold text-white tracking-tighter">
+                    Account <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#e27241] to-[#ffba20]">Settings</span>
+                </h1>
+                <p class="text-zinc-400 font-light text-sm mt-1">Gerencie seu perfil e preferências do sistema</p>
+            </div>
+
+            <div class="px-8 py-6">
+                <SettingsForm client:load />
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('logout-btn')?.addEventListener('click', () => {
+            localStorage.removeItem('visionlabs_token');
+            window.location.href = '/landing';
+        });
+    </script>
+</body>
+</html>

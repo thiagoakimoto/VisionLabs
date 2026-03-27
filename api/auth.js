@@ -1,18 +1,9 @@
 const express = require('express');
-const { Pool } = require('pg');
+const pool = require('../lib/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
-
-// Configuração do Pool de Conexão com o Neon DB (PostgreSQL)
-// É necessário que 'DATABASE_URL' esteja definido no arquivo .env
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
 
 // Chave secreta para assinatura dos tokens JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_visionlabs';

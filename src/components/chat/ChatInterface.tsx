@@ -1,0 +1,253 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { MessageBubble, type Message } from './MessageBubble';
+import { ImageAttachment } from './ImageAttachment';
+import { GenerationProgress } from './GenerationProgress';
+import { useAuth } from '../hooks/useAuth';
+import { useGenerations, type GenerationResult } from '../hooks/useGenerations';
+
+interface ChatInterfaceProps {
+    onResult?: (result: GenerationResult & { type: 'image' | 'video' }) => void;
+}
+
+export function ChatInterface({ onResult }: ChatInterfaceProps) {
+    const { authFetch } = useAuth();
+    const { createImageGeneration, createVideoGeneration, pollStatus } = useGenerations();
+
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [prompt, setPrompt] = useState('');
+    const [mode, setMode] = useState<'image' | 'video'>('image');
+    const [attachedImage, setAttachedImage] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generatingType, setGeneratingType] = useState<'image' | 'video'>('image');
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const stopPollingRef = useRef<(() => void) | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Carrega histórico de mensagens
+    useEffect(() => {
+        authFetch('/api/chat/messages?limit=50')
+            .then(r => r.json())
+            .then(data => {
+                const loaded: Message[] = data.messages.map((m: any) => ({
+                    id: String(m.id),
+                    role: m.role,
+                    content: m.content,
+                    mediaUrl: m.media_url || undefined,
+                    mediaType: m.media_type || undefined,
+                    createdAt: m.created_at,
+                }));
+                if (loaded.length === 0) {
+                    setMessages([{
+                        id: 'welcome',
+                        role: 'assistant',
+                        content: "Estou pronto para renderizar sua visão. Você pode especificar movimentos de câmera, condições de iluminação e densidade atmosférica. O que vamos criar hoje?",
+                    }]);
+                } else {
+                    setMessages(loaded);
+                }
+            })
+            .catch(() => {
+                setMessages([{
+                    id: 'welcome',
+                    role: 'assistant',
+                    content: "Estou pronto para renderizar sua visão. O que vamos criar hoje?",
+                }]);
+            });
+    }, []);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, mediaUrl?: string, mediaType?: string, generationId?: number) => {
+        try {
+            await authFetch('/api/chat/messages', {
+                method: 'POST',
+                body: JSON.stringify({ role, content, mediaUrl, mediaType, generationId }),
+            });
+        } catch { /* ignora erros de persistência */ }
+    }, [authFetch]);
+
+    const addMessage = useCallback((msg: Message) => {
+        setMessages(prev => [...prev, msg]);
+    }, []);
+
+    const handleSubmit = useCallback(async () => {
+        const trimmedPrompt = prompt.trim();
+        if (!trimmedPrompt || isGenerating) return;
+
+        // Mensagem do usuário
+        const userMsg: Message = {
+            id: `user-${Date.now()}`,
+            role: 'user',
+            content: trimmedPrompt + (attachedImage ? ' [+ imagem de referência]' : ''),
+        };
+        addMessage(userMsg);
+        saveMessage('user', userMsg.content);
+
+        setPrompt('');
+        setIsGenerating(true);
+        setGeneratingType(mode);
+        const currentImage = attachedImage;
+        setAttachedImage(null);
+
+        try {
+            if (mode === 'image') {
+                const result = await createImageGeneration({
+                    prompt: trimmedPrompt,
+                    inputImage: currentImage || undefined,
+                });
+
+                const assistantMsg: Message = {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: result.title || 'Imagem gerada com sucesso!',
+                    mediaUrl: result.image,
+                    mediaType: 'image',
+                };
+                addMessage(assistantMsg);
+                onResult?.({ ...result, type: 'image', image: result.image });
+
+            } else {
+                // Vídeo: assíncrono com polling
+                const { generationId } = await createVideoGeneration({
+                    prompt: trimmedPrompt,
+                    inputImage: currentImage || undefined,
+                });
+
+                const stopPolling = pollStatus(
+                    generationId,
+                    (result) => {
+                        setIsGenerating(false);
+                        const assistantMsg: Message = {
+                            id: `assistant-${Date.now()}`,
+                            role: 'assistant',
+                            content: result.title || 'Vídeo gerado com sucesso!',
+                            mediaUrl: result.video,
+                            mediaType: 'video',
+                        };
+                        addMessage(assistantMsg);
+                        onResult?.({ ...result, type: 'video' });
+                    },
+                    (error) => {
+                        setIsGenerating(false);
+                        addMessage({
+                            id: `error-${Date.now()}`,
+                            role: 'assistant',
+                            content: `Erro ao gerar vídeo: ${error}`,
+                        });
+                    }
+                );
+                stopPollingRef.current = stopPolling;
+                return; // Não chama setIsGenerating(false) aqui — o polling faz isso
+            }
+        } catch (error: any) {
+            addMessage({
+                id: `error-${Date.now()}`,
+                role: 'assistant',
+                content: `Erro: ${error.message || 'Falha ao gerar conteúdo'}`,
+            });
+        } finally {
+            if (mode === 'image') setIsGenerating(false);
+        }
+    }, [prompt, isGenerating, mode, attachedImage, createImageGeneration, createVideoGeneration, pollStatus, addMessage, saveMessage, onResult]);
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit();
+    };
+
+    const adjustTextarea = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setPrompt(e.target.value);
+        e.target.style.height = 'auto';
+        e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+    };
+
+    return (
+        <div className="flex-1 flex flex-col justify-end max-w-4xl mx-auto w-full pb-10">
+            {/* Messages */}
+            <div className="space-y-6 mb-10 overflow-y-auto pr-4 flex-1" style={{ maxHeight: 'calc(100vh - 320px)' }}>
+                {messages.map(msg => (
+                    <MessageBubble key={msg.id} message={msg} />
+                ))}
+                {isGenerating && <GenerationProgress type={generatingType} />}
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* Mode toggle */}
+            <div className="flex gap-2 mb-3">
+                <button
+                    onClick={() => setMode('image')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        mode === 'image'
+                            ? 'bg-[#e27241]/20 text-[#e27241] border border-[#e27241]/30'
+                            : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                    }`}
+                >
+                    <span className="material-symbols-outlined text-sm">image</span>
+                    Imagem
+                </button>
+                <button
+                    onClick={() => setMode('video')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        mode === 'video'
+                            ? 'bg-[#e27241]/20 text-[#e27241] border border-[#e27241]/30'
+                            : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                    }`}
+                >
+                    <span className="material-symbols-outlined text-sm">videocam</span>
+                    Vídeo
+                </button>
+            </div>
+
+            {/* Input area */}
+            <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#e27241]/20 to-[#ecc161]/10 blur opacity-25 group-focus-within:opacity-50 transition duration-1000" />
+                <div className="relative rounded-2xl p-2 flex items-end gap-2 border border-white/10 group-focus-within:border-[#e27241]/30 transition-all"
+                     style={{ background: 'rgba(53,53,52,0.4)', backdropFilter: 'blur(40px)' }}>
+
+                    {/* Thumbnail da imagem anexada (se houver) */}
+                    {attachedImage && (
+                        <div className="relative group/img w-10 h-10 rounded-lg overflow-hidden border border-[#e27241]/30 flex-shrink-0 self-center ml-2">
+                            <img src={attachedImage} alt="Anexo" className="w-full h-full object-cover" />
+                            <button onClick={() => setAttachedImage(null)}
+                                className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="material-symbols-outlined text-white text-sm">close</span>
+                            </button>
+                        </div>
+                    )}
+
+                    <textarea
+                        ref={textareaRef}
+                        value={prompt}
+                        onChange={adjustTextarea}
+                        onKeyDown={handleKeyDown}
+                        disabled={isGenerating}
+                        className="w-full bg-transparent border-none focus:ring-0 text-white outline-none placeholder:text-zinc-600 py-3 px-4 resize-none min-h-[60px] max-h-[200px] text-sm font-light disabled:opacity-50"
+                        placeholder={mode === 'video' ? 'Descreva seu vídeo cinematográfico... (Ctrl+Enter para enviar)' : 'Descreva a imagem que deseja criar... (Ctrl+Enter para enviar)'}
+                        rows={1}
+                    />
+                    <div className="flex items-center gap-2 p-2 flex-shrink-0">
+                        <ImageAttachment value={attachedImage} onChange={setAttachedImage} />
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isGenerating || !prompt.trim()}
+                            className="bg-[#e27241] text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                        >
+                            <span>{isGenerating ? 'Gerando...' : 'Generate'}</span>
+                            <span className="material-symbols-outlined text-sm">
+                                {isGenerating ? 'hourglass_empty' : 'send'}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex justify-center gap-6 mt-6">
+                <button onClick={() => setPrompt('Macro cinematográfico, hora dourada, musgo com partículas âmbar flutuando')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Cinematic 4K</button>
+                <button onClick={() => setPrompt('Fotografia macro extrema com bokeh suave e iluminação natural difusa')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Macro Photography</button>
+                <button onClick={() => setPrompt('Lente anamórfica, flares de luz azul, profundidade de campo rasa, noite urbana')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Anamorphic Lens</button>
+            </div>
+        </div>
+    );
+}

@@ -1,75 +1,30 @@
-const { GoogleGenAI } = require('@google/genai');
-const { processImageInput } = require('../lib/imageProcessor');
+const { generateImage } = require('../lib/generateImage');
 const { uploadToImgur } = require('../lib/imageUpload');
 const applyCors = require('../lib/cors');
-require('dotenv').config();
-
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 const handler = async (req, res) => {
   applyCors(req, res);
-  
+
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { prompt, returnFormat = 'base64' } = req.body;
+    const { returnFormat = 'base64' } = req.body;
 
-    if (!prompt) return res.status(400).json({ error: 'Campo "prompt" é obrigatório' });
+    const { image, mimeType } = await generateImage(req.body);
+    const base64Data = image.split(',')[1];
 
-    let parts = [{ text: prompt }];
-    
-    // Processa a imagem usando o utils
-    const imageBuffer = await processImageInput(req.body);
-
-    if (imageBuffer) {
-      parts.push({
-        inlineData: {
-          mimeType: 'image/png',
-          data: imageBuffer.toString('base64')
-        }
-      });
+    if (returnFormat === 'file') {
+      const buffer = Buffer.from(base64Data, 'base64');
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', 'attachment; filename="edited.png"');
+      return res.send(buffer);
+    } else if (returnFormat === 'url') {
+      const imageUrl = await uploadToImgur(base64Data);
+      return res.json({ success: true, imageUrl, format: 'url' });
+    } else {
+      return res.json({ success: true, image, format: 'base64' });
     }
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: [{ role: 'user', parts: parts }]
-    });
-
-    const candidate = response.candidates?.[0]?.content?.parts;
-    if (!candidate) throw new Error('Sem resposta da IA');
-
-    for (const part of candidate) {
-      if (part.inlineData) {
-        const imageData = part.inlineData.data;
-        
-        if (returnFormat === 'file') {
-          const buffer = Buffer.from(imageData, 'base64');
-          res.setHeader('Content-Type', 'image/png');
-          res.setHeader('Content-Disposition', 'attachment; filename="edited.png"');
-          return res.send(buffer);
-        } else if (returnFormat === 'url') {
-          // Upload para Imgur e retorna URL
-          const imageUrl = await uploadToImgur(imageData);
-          return res.json({
-            success: true,
-            imageUrl: imageUrl,
-            format: 'url'
-          });
-        } else {
-          // Retorna Base64 (padrão)
-          return res.json({
-            success: true,
-            image: `data:image/png;base64,${imageData}`,
-            format: 'base64'
-          });
-        }
-      }
-    }
-    
-    const textPart = candidate.find(p => p.text);
-    throw new Error(textPart ? `IA Recusou: ${textPart.text}` : 'Erro desconhecido');
-
   } catch (error) {
     console.error('ERRO:', error);
     res.status(500).json({ error: error.message });
@@ -77,10 +32,4 @@ const handler = async (req, res) => {
 };
 
 module.exports = handler;
-module.exports.config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb'
-    }
-  }
-};
+module.exports.config = { api: { bodyParser: { sizeLimit: '100mb' } } };

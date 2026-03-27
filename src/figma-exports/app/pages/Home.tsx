@@ -1,4 +1,4 @@
-import imgHf20260214043841016869D1Cc0A4B2CBd96D3Dd6Bc7792D1 from "figma:asset/8dbaee134c10bc2243d18e95af68d70db5d8b521.png";
+const imgHf20260214043841016869D1Cc0A4B2CBd96D3Dd6Bc7792D1 = "/media/chat/preview.jpg";
 
 export default function Home() {
   return (
