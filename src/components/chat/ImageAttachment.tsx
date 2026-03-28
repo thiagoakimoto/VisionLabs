@@ -23,17 +23,7 @@ export function ImageAttachment({ value, onChange }: ImageAttachmentProps) {
     };
 
     if (value) {
-        return (
-            <div className="relative group w-10 h-10 rounded-lg overflow-hidden border border-[#e27241]/30 flex-shrink-0">
-                <img src={value} alt="Anexo" className="w-full h-full object-cover" />
-                <button
-                    onClick={() => onChange(null)}
-                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                >
-                    <span className="material-symbols-outlined text-white text-sm">close</span>
-                </button>
-            </div>
-        );
+        return null; // The ChatInterface now handles rendering the preview so we don't duplicate.
     }
 
     return (
@@ -41,14 +31,14 @@ export function ImageAttachment({ value, onChange }: ImageAttachmentProps) {
             <input
                 ref={inputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 className="hidden"
                 onChange={handleFile}
             />
             <button
                 onClick={() => inputRef.current?.click()}
                 className="p-2 text-zinc-500 hover:text-[#e27241] transition-colors cursor-pointer"
-                title="Anexar imagem de referência"
+                title="Anexar imagem ou vídeo de referência"
             >
                 <span className="material-symbols-outlined">image</span>
             </button>

@@ -11,9 +11,10 @@ export interface Message {
 
 interface MessageBubbleProps {
     message: Message;
+    onImageClick?: (url: string) => void;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, onImageClick }: MessageBubbleProps) {
     const isUser = message.role === 'user';
 
     return (
@@ -41,10 +42,15 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     <p className="text-sm text-zinc-200 leading-relaxed font-light whitespace-pre-wrap">{message.content}</p>
                 </div>
 
-                {/* Mídia gerada */}
+                {/* Mídia gerada/anexada */}
                 {message.mediaUrl && message.mediaType === 'image' && (
                     <div className="relative group rounded-2xl overflow-hidden border border-[rgba(88,66,53,0.15)] max-w-sm">
-                        <img src={message.mediaUrl} alt="Imagem gerada" className="w-full h-auto object-cover" />
+                        <img 
+                            src={message.mediaUrl} 
+                            alt="Imagem" 
+                            className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => onImageClick?.(message.mediaUrl!)}
+                        />
                         <a
                             href={message.mediaUrl}
                             download="visionlabs-image.png"

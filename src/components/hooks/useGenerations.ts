@@ -108,5 +108,12 @@ export function useGenerations() {
         }));
     }, [authFetch]);
 
-    return { createImageGeneration, createVideoGeneration, pollStatus, listGenerations };
+    const deleteGeneration = useCallback(async (id: number): Promise<boolean> => {
+        const res = await authFetch(`/api/generations/${id}`, {
+            method: 'DELETE',
+        });
+        return res.ok;
+    }, [authFetch]);
+
+    return { createImageGeneration, createVideoGeneration, pollStatus, listGenerations, deleteGeneration };
 }

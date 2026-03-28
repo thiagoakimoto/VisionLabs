@@ -35,7 +35,7 @@ router.post('/image', async (req, res) => {
                 [userId, generationId, `Imagem gerada: ${title}`, result.image]
             );
 
-            return res.json({ success: true, generationId, image: result.image, title });
+            return res.json({ success: true, generationId, image: `/api/generations/${generationId}/media`, title });
 
         } catch (genError) {
             await pool.query(
@@ -117,7 +117,7 @@ router.get('/:id/status', async (req, res) => {
             status: gen.status,
             type: gen.type,
             title: gen.title,
-            result: gen.status === 'complete' ? gen.result_url : null,
+            result: gen.status === 'complete' ? `/api/generations/${gen.id}/media` : null,
             videoId: gen.video_id,
             error: gen.error_message,
             updatedAt: gen.updated_at
@@ -137,13 +137,18 @@ router.get('/', async (req, res) => {
 
         const result = await pool.query(
             `SELECT id, type, prompt, title, aspect_ratio, status, video_id, created_at, updated_at,
-                    CASE WHEN status='complete' THEN result_url ELSE NULL END as result_url
+                    CASE WHEN status='complete' AND result_url IS NOT NULL THEN true ELSE false END as has_media
              FROM generations WHERE user_id=$1
              ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
             [userId, limit, offset]
         );
 
-        return res.json({ generations: result.rows, limit, offset });
+        const generations = result.rows.map(g => ({
+            ...g,
+            result_url: g.has_media ? `/api/generations/${g.id}/media` : null
+        }));
+
+        return res.json({ generations, limit, offset });
     } catch (err) {
         console.error('[generations/list]', err);
         return res.status(500).json({ error: err.message });
@@ -162,9 +167,46 @@ router.get('/:id', async (req, res) => {
         );
 
         if (!result.rows.length) return res.status(404).json({ error: 'Geração não encontrada' });
-        return res.json(result.rows[0]);
+        
+        const g = result.rows[0];
+        g.result_url = g.result_url ? `/api/generations/${g.id}/media` : null;
+
+        return res.json(g);
     } catch (err) {
         console.error('[generations/get]', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/generations/:id/media
+router.get('/:id/media', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            `SELECT result_url, type FROM generations WHERE id=$1`,
+            [id]
+        );
+        if (!result.rows.length || !result.rows[0].result_url) {
+            return res.status(404).json({ error: 'Media not found' });
+        }
+        let base64Data = result.rows[0].result_url;
+        let mimeType = result.rows[0].type === 'video' ? 'video/mp4' : 'image/png';
+        if (base64Data.startsWith('data:')) {
+            const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+                mimeType = matches[1];
+                base64Data = matches[2];
+            }
+        }
+        const buffer = Buffer.from(base64Data, 'base64');
+        res.writeHead(200, {
+            'Content-Type': mimeType,
+            'Content-Length': buffer.length,
+            'Cache-Control': 'public, max-age=31536000'
+        });
+        return res.end(buffer);
+    } catch (err) {
+        console.error('[generations/media]', err);
         return res.status(500).json({ error: err.message });
     }
 });

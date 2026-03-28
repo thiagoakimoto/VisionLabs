@@ -2,16 +2,44 @@ import React, { useEffect, useState } from 'react';
 import { useGenerations, type Generation } from '../hooks/useGenerations';
 
 export function ProjectsGrid() {
-    const { listGenerations } = useGenerations();
+    const { listGenerations, deleteGeneration } = useGenerations();
     const [generations, setGenerations] = useState<Generation[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<Generation | null>(null);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const limit = 12;
+
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        if (confirm('Tem certeza que deseja excluir este projeto?')) {
+            const success = await deleteGeneration(id);
+            if (success) {
+                setGenerations(prev => prev.filter(g => g.id !== id));
+                if (selected?.id === id) setSelected(null);
+            }
+        }
+    };
+
+    const loadProjects = (pageIndex: number) => {
+        if (pageIndex === 0) setLoading(true);
+        listGenerations(limit, pageIndex * limit)
+            .then(gens => {
+                if (gens.length < limit) setHasMore(false);
+                setGenerations(prev => pageIndex === 0 ? gens : [...prev, ...gens]);
+            })
+            .finally(() => setLoading(false));
+    };
 
     useEffect(() => {
-        listGenerations(50)
-            .then(gens => setGenerations(gens))
-            .finally(() => setLoading(false));
+        loadProjects(0);
     }, []);
+
+    const handleLoadMore = () => {
+        const next = page + 1;
+        setPage(next);
+        loadProjects(next);
+    };
 
     if (loading) {
         return (
@@ -76,14 +104,31 @@ export function ProjectsGrid() {
                             <p className="text-[10px] text-zinc-500 mt-1">{new Date(gen.createdAt).toLocaleDateString('pt-BR')}</p>
                         </div>
 
-                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white">
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                            <button className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white transition-colors">
                                 <span className="material-symbols-outlined text-sm">fullscreen</span>
+                            </button>
+                            <button
+                                onClick={(e) => handleDelete(e, gen.id)}
+                                className="w-8 h-8 rounded-full bg-red-500/60 backdrop-blur-sm flex items-center justify-center text-white/80 hover:bg-red-500 hover:text-white transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-sm">delete</span>
                             </button>
                         </div>
                     </div>
                 ))}
             </div>
+
+            {hasMore && generations.length > 0 && (
+                <div className="flex justify-center mt-8 pb-8">
+                    <button
+                        onClick={handleLoadMore}
+                        className="px-6 py-2 border border-[#e27241]/30 text-[#e27241] rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#e27241]/10 transition-colors"
+                    >
+                        Carregar mais
+                    </button>
+                </div>
+            )}
 
             {/* Modal de visualização */}
             {selected && (

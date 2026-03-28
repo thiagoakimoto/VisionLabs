@@ -43,8 +43,11 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
     </script>
 
     <!-- Top Navigation -->
-    <header class="w-full h-16 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-3xl flex justify-between items-center px-8 border-b border-white/5">
+    <header class="w-full h-16 sticky top-0 z-50 bg-[#0a0a0a]/40 backdrop-blur-[40px] flex justify-between items-center px-8 border-b border-white/10">
         <div class="flex items-center gap-6">
+            <button id="menu-toggle" class="text-zinc-400 hover:text-[#e27241] transition-colors flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">menu</span>
+            </button>
             <span class="text-lg font-black text-white tracking-tighter uppercase">VisionLabs</span>
             <nav class="hidden md:flex gap-8">
                 <a class="text-[#e27241] font-bold border-b-2 border-[#e27241] uppercase tracking-widest text-[10px] py-1" href="#">Models</a>
@@ -53,6 +56,9 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
             </nav>
         </div>
         <div class="flex items-center gap-4">
+            <button id="right-menu-toggle" class="text-zinc-400 hover:text-[#e27241] transition-colors flex items-center justify-center mr-2">
+                <span class="material-symbols-outlined text-xl">dock_to_right</span>
+            </button>
             <div class="relative group mt-1">
                 <span class="material-symbols-outlined text-zinc-400 cursor-pointer hover:text-[#e27241] transition-colors">notifications</span>
                 <span class="absolute top-0 right-0 w-2 h-2 bg-[#e27241] rounded-full"></span>
@@ -75,7 +81,7 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
         </div>
 
         <!-- Sidebar -->
-        <aside class="h-screen w-64 bg-[#0a0a0a] border-r border-[#e27241]/15 flex flex-col p-4 gap-2 z-10 shadow-[0_0_60px_rgba(226,114,65,0.04)] tracking-tight flex-shrink-0">
+        <aside id="left-sidebar" class="h-screen w-64 bg-[#0a0a0a] border-r border-[#e27241]/15 flex flex-col p-4 gap-2 z-10 shadow-[0_0_60px_rgba(226,114,65,0.04)] tracking-tight flex-shrink-0 transition-all duration-300 overflow-hidden">
             <div class="mb-8 px-4 pt-2">
                 <h2 class="text-xl font-bold text-[#e27241] tracking-tighter">Atmospheric AI</h2>
                 <p class="text-[10px] uppercase tracking-widest text-zinc-500">Cinematic Engine</p>
@@ -89,7 +95,7 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
                     <span class="material-symbols-outlined">history</span>
                     <span class="text-sm font-medium">Recent Projects</span>
                 </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-200 transition-colors hover:bg-white/5 hover:backdrop-blur-xl transition-all">
+                <a href="/assets" class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-200 transition-colors hover:bg-white/5 hover:backdrop-blur-xl transition-all">
                     <span class="material-symbols-outlined">subscriptions</span>
                     <span class="text-sm font-medium">Assets Library</span>
                 </a>
@@ -129,7 +135,7 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
         </main>
 
         <!-- Preview Panel container (preenchido pelo portal React) -->
-        <aside id="preview-root" class="w-96 glass-panel border-l border-white/5 flex flex-col p-6 gap-6 z-10 overflow-y-auto flex-shrink-0"></aside>
+        <aside id="preview-root" class="w-96 glass-panel border-l border-white/5 flex flex-col p-6 gap-6 z-10 overflow-y-auto flex-shrink-0 transition-all duration-300"></aside>
     </div>
 
     <script>
@@ -138,6 +144,39 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
             localStorage.removeItem('visionlabs_token');
             window.location.href = '/landing';
         });
+
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('left-sidebar');
+
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', () => {
+                const isOpen = !sidebar.classList.contains('w-0');
+                if (isOpen) {
+                    sidebar.classList.remove('w-64', 'p-4', 'border-r');
+                    sidebar.classList.add('w-0', 'p-0', 'border-none', 'opacity-0');
+                } else {
+                    sidebar.classList.remove('w-0', 'p-0', 'border-none', 'opacity-0');
+                    sidebar.classList.add('w-64', 'p-4', 'border-r');
+                }
+            });
+        }
+
+        // Right Menu Toggle
+        const rightToggle = document.getElementById('right-menu-toggle');
+        const rightSidebar = document.getElementById('preview-root');
+
+        if (rightToggle && rightSidebar) {
+            rightToggle.addEventListener('click', () => {
+                const isOpen = !rightSidebar.classList.contains('w-0');
+                if (isOpen) {
+                    rightSidebar.classList.remove('w-96', 'p-6', 'border-l');
+                    rightSidebar.classList.add('w-0', 'p-0', 'border-none', 'opacity-0');
+                } else {
+                    rightSidebar.classList.remove('w-0', 'p-0', 'border-none', 'opacity-0');
+                    rightSidebar.classList.add('w-96', 'p-6', 'border-l');
+                }
+            });
+        }
     </script>
 </body>
 </html>

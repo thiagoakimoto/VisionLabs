@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MessageBubble, type Message } from './MessageBubble';
 import { ImageAttachment } from './ImageAttachment';
 import { GenerationProgress } from './GenerationProgress';
@@ -19,6 +20,7 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
     const [attachedImage, setAttachedImage] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatingType, setGeneratingType] = useState<'image' | 'video'>('image');
+    const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const stopPollingRef = useRef<(() => void) | null>(null);
@@ -73,18 +75,38 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
         setMessages(prev => [...prev, msg]);
     }, []);
 
+    const handleNewChat = useCallback(async () => {
+        if (!confirm('Esta ação removerá todas as mensagens e mídias deste chat. Deseja continuar?')) return;
+        try {
+            await authFetch('/api/chat/messages', { method: 'DELETE' });
+            setMessages([{
+                id: 'welcome',
+                role: 'assistant',
+                content: "Estou pronto para renderizar sua visão. O que vamos criar hoje?",
+            }]);
+            setAttachedImage(null);
+            setPrompt('');
+        } catch (e) {
+            console.error('Erro ao limpar chat:', e);
+        }
+    }, [authFetch]);
+
     const handleSubmit = useCallback(async () => {
         const trimmedPrompt = prompt.trim();
         if (!trimmedPrompt || isGenerating) return;
+
+        const mediaType = attachedImage ? (attachedImage.startsWith('data:video') ? 'video' : 'image') : undefined;
 
         // Mensagem do usuário
         const userMsg: Message = {
             id: `user-${Date.now()}`,
             role: 'user',
-            content: trimmedPrompt + (attachedImage ? ' [+ imagem de referência]' : ''),
+            content: trimmedPrompt,
+            mediaUrl: attachedImage || undefined,
+            mediaType: mediaType,
         };
         addMessage(userMsg);
-        saveMessage('user', userMsg.content);
+        saveMessage('user', userMsg.content, userMsg.mediaUrl, userMsg.mediaType);
 
         setPrompt('');
         setIsGenerating(true);
@@ -157,6 +179,20 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit();
     };
 
+    const handlePaste = (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.startsWith('image/') || items[i].type.startsWith('video/')) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => setAttachedImage(reader.result as string);
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+    };
+
     const adjustTextarea = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setPrompt(e.target.value);
         e.target.style.height = 'auto';
@@ -168,35 +204,48 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
             {/* Messages */}
             <div className="space-y-6 mb-10 overflow-y-auto pr-4 flex-1" style={{ maxHeight: 'calc(100vh - 320px)' }}>
                 {messages.map(msg => (
-                    <MessageBubble key={msg.id} message={msg} />
+                    <MessageBubble key={msg.id} message={msg} onImageClick={setZoomedImage} />
                 ))}
                 {isGenerating && <GenerationProgress type={generatingType} />}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Mode toggle */}
-            <div className="flex gap-2 mb-3">
+            {/* Utilities Header */}
+            <div className="flex justify-between items-end mb-3">
+                {/* Mode toggle */}
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setMode('image')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                            mode === 'image'
+                                ? 'bg-[#e27241]/20 text-[#e27241] border border-[#e27241]/30'
+                                : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                        }`}
+                    >
+                        <span className="material-symbols-outlined text-sm">image</span>
+                        Imagem
+                    </button>
+                    <button
+                        onClick={() => setMode('video')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                            mode === 'video'
+                                ? 'bg-[#e27241]/20 text-[#e27241] border border-[#e27241]/30'
+                                : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                        }`}
+                    >
+                        <span className="material-symbols-outlined text-sm">videocam</span>
+                        Vídeo
+                    </button>
+                </div>
+
+                {/* New Chat Action */}
                 <button
-                    onClick={() => setMode('image')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                        mode === 'image'
-                            ? 'bg-[#e27241]/20 text-[#e27241] border border-[#e27241]/30'
-                            : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
-                    }`}
+                    onClick={handleNewChat}
+                    title="Nova Conversa e Limpar Histórico"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all text-zinc-500 hover:text-[#e27241] border border-transparent hover:border-[#e27241]/30 hover:bg-[#e27241]/10 bg-black/40 backdrop-blur-sm"
                 >
-                    <span className="material-symbols-outlined text-sm">image</span>
-                    Imagem
-                </button>
-                <button
-                    onClick={() => setMode('video')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                        mode === 'video'
-                            ? 'bg-[#e27241]/20 text-[#e27241] border border-[#e27241]/30'
-                            : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
-                    }`}
-                >
-                    <span className="material-symbols-outlined text-sm">videocam</span>
-                    Vídeo
+                    <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                    Nova Conversa
                 </button>
             </div>
 
@@ -208,8 +257,12 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
 
                     {/* Thumbnail da imagem anexada (se houver) */}
                     {attachedImage && (
-                        <div className="relative group/img w-10 h-10 rounded-lg overflow-hidden border border-[#e27241]/30 flex-shrink-0 self-center ml-2">
-                            <img src={attachedImage} alt="Anexo" className="w-full h-full object-cover" />
+                        <div className="relative group/img w-14 h-14 rounded-lg overflow-hidden border border-[#e27241]/30 flex-shrink-0 self-center ml-2 bg-black/50">
+                            {attachedImage.startsWith('data:video') ? (
+                                <video src={attachedImage} className="w-full h-full object-cover" muted playsInline />
+                            ) : (
+                                <img src={attachedImage} alt="Anexo" className="w-full h-full object-cover" />
+                            )}
                             <button onClick={() => setAttachedImage(null)}
                                 className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                                 <span className="material-symbols-outlined text-white text-sm">close</span>
@@ -222,9 +275,10 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                         value={prompt}
                         onChange={adjustTextarea}
                         onKeyDown={handleKeyDown}
+                        onPaste={handlePaste}
                         disabled={isGenerating}
-                        className="w-full bg-transparent border-none focus:ring-0 text-white outline-none placeholder:text-zinc-600 py-3 px-4 resize-none min-h-[60px] max-h-[200px] text-sm font-light disabled:opacity-50"
-                        placeholder={mode === 'video' ? 'Descreva seu vídeo cinematográfico... (Ctrl+Enter para enviar)' : 'Descreva a imagem que deseja criar... (Ctrl+Enter para enviar)'}
+                        className="w-full bg-transparent border-none focus:ring-0 text-white outline-none placeholder:text-zinc-500 py-3 px-4 resize-none min-h-[60px] max-h-[200px] text-sm font-light disabled:opacity-50"
+                        placeholder={mode === 'video' ? 'Descreva o vídeo que deseja gerar ou cole um vídeo/imagem base... (Ctrl+Enter)' : 'Cole uma imagem de referência ou descreva o que criar... (Ctrl+Enter)'}
                         rows={1}
                     />
                     <div className="flex items-center gap-2 p-2 flex-shrink-0">
@@ -248,6 +302,28 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                 <button onClick={() => setPrompt('Fotografia macro extrema com bokeh suave e iluminação natural difusa')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Macro Photography</button>
                 <button onClick={() => setPrompt('Lente anamórfica, flares de luz azul, profundidade de campo rasa, noite urbana')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Anamorphic Lens</button>
             </div>
+
+            {/* Lightbox Modal para Zoom usando Portal para escapar do contexto Z-Index */}
+            {zoomedImage && typeof document !== 'undefined' && createPortal(
+                <div 
+                    className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 animate-in fade-in duration-200 cursor-zoom-out"
+                    onClick={() => setZoomedImage(null)}
+                >
+                    <button 
+                        className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-[#e27241] rounded-full flex items-center justify-center text-white backdrop-blur-md transition-colors z-10"
+                        onClick={(e) => { e.stopPropagation(); setZoomedImage(null); }}
+                    >
+                        <span className="material-symbols-outlined text-2xl">close</span>
+                    </button>
+                    <img 
+                        src={zoomedImage} 
+                        alt="Zoomed" 
+                        className="max-w-[95vw] max-h-[95vh] object-contain rounded-2xl shadow-2xl ring-1 ring-white/10 cursor-default animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()} 
+                    />
+                </div>,
+                document.body
+            )}
         </div>
     );
 }
