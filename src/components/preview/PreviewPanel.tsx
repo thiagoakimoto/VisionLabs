@@ -12,9 +12,10 @@ interface CurrentResult {
 
 interface PreviewPanelProps {
     currentResult?: CurrentResult | null;
+    sessionId?: string;
 }
 
-export function PreviewPanel({ currentResult }: PreviewPanelProps) {
+export function PreviewPanel({ currentResult, sessionId }: PreviewPanelProps) {
     const { listGenerations } = useGenerations();
     const [recentThumbs, setRecentThumbs] = useState<Generation[]>([]);
     const [selected, setSelected] = useState<CurrentResult | null>(null);
@@ -24,15 +25,24 @@ export function PreviewPanel({ currentResult }: PreviewPanelProps) {
     useEffect(() => {
         if (currentResult) {
             setSelected(currentResult);
-            // Recarrega thumbnails
-            listGenerations(6).then(gens => setRecentThumbs(gens.filter(g => g.status === 'complete')));
+            // Recarrega thumbnails restrito à sessão atual (se definida)
+            listGenerations(6, 0, sessionId).then(gens => setRecentThumbs(gens.filter(g => g.status === 'complete')));
         }
-    }, [currentResult]);
+    }, [currentResult, listGenerations, sessionId]);
 
-    // Carrega thumbnails iniciais
+    // Carrega thumbnails iniciais ou quando a sessão muda
     useEffect(() => {
-        listGenerations(6).then(gens => setRecentThumbs(gens.filter(g => g.status === 'complete')));
-    }, []);
+        listGenerations(6, 0, sessionId).then(gens => {
+            const completed = gens.filter(g => g.status === 'complete');
+            setRecentThumbs(completed);
+            // Ao trocar de sessão, reseta a imagem principal se necessário
+            if (!currentResult && completed.length > 0) {
+                // setSelected(null); // mantem focado na mais recente se não tiver seleção explicit
+            } else if (!currentResult || completed.length === 0) {
+                setSelected(null);
+            }
+        });
+    }, [sessionId, listGenerations, currentResult]);
 
     const display = selected || (recentThumbs[0] ? {
         type: recentThumbs[0].type,
@@ -54,12 +64,15 @@ export function PreviewPanel({ currentResult }: PreviewPanelProps) {
                 {display?.url ? (
                     display.type === 'video' ? (
                         <video
-                            src={display.url}
                             className="w-full h-full object-cover"
                             autoPlay
                             muted
+                            playsInline
                             loop
-                        />
+                            preload="auto"
+                        >
+                            <source src={display.url} type="video/mp4" />
+                        </video>
                     ) : (
                         <img
                             src={display.url}
@@ -118,9 +131,11 @@ export function PreviewPanel({ currentResult }: PreviewPanelProps) {
                             className="aspect-square rounded-xl overflow-hidden ghost-border relative group cursor-pointer"
                         >
                             {gen.type === 'video' ? (
-                                <video src={gen.resultUrl!} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" muted />
+                                <video className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" muted playsInline preload="metadata">
+                                    <source src={gen.resultUrl!} type="video/mp4" />
+                                </video>
                             ) : (
-                                <img src={gen.resultUrl!} alt={gen.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                                <img src={gen.resultUrl!} alt={gen.title} loading="lazy" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                             )}
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <span className="material-symbols-outlined text-white text-sm">visibility</span>
@@ -159,7 +174,9 @@ export function PreviewPanel({ currentResult }: PreviewPanelProps) {
                     onClick={() => setFullscreen(false)}
                 >
                     {display.type === 'video' ? (
-                        <video src={display.url} controls autoPlay className="max-w-full max-h-full" onClick={e => e.stopPropagation()} />
+                        <video controls autoPlay muted playsInline preload="auto" className="max-w-full max-h-full" onClick={e => e.stopPropagation()}>
+                            <source src={display.url} type="video/mp4" />
+                        </video>
                     ) : (
                         <img src={display.url} alt="Fullscreen" className="max-w-full max-h-full object-contain" />
                     )}

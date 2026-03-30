@@ -8,16 +8,23 @@ import { useGenerations, type GenerationResult } from '../hooks/useGenerations';
 
 interface ChatInterfaceProps {
     onResult?: (result: GenerationResult & { type: 'image' | 'video' }) => void;
+    sessionId?: string;
+    onSessionCreated?: (id: string) => void;
 }
 
-export function ChatInterface({ onResult }: ChatInterfaceProps) {
+function generateSessionId(): string {
+    return `session-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function ChatInterface({ onResult, sessionId: propSessionId, onSessionCreated }: ChatInterfaceProps) {
     const { authFetch } = useAuth();
     const { createImageGeneration, createVideoGeneration, pollStatus } = useGenerations();
 
+    const [sessionId, setSessionId] = useState<string>(propSessionId || 'default-session');
     const [messages, setMessages] = useState<Message[]>([]);
     const [prompt, setPrompt] = useState('');
     const [mode, setMode] = useState<'image' | 'video'>('image');
-    const [attachedImage, setAttachedImage] = useState<string | null>(null);
+    const [attachedImages, setAttachedImages] = useState<string[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatingType, setGeneratingType] = useState<'image' | 'video'>('image');
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
@@ -25,13 +32,30 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const stopPollingRef = useRef<(() => void) | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const currentSessionIdRef = useRef(sessionId);
 
-    // Carrega histórico de mensagens
+    // Mantém o ref atualizado com o sessionId currente da UI
     useEffect(() => {
-        authFetch('/api/chat/messages?limit=50')
+        currentSessionIdRef.current = sessionId;
+    }, [sessionId]);
+
+    // Atualiza sessão quando a prop muda (ao clicar numa conversa anterior)
+    useEffect(() => {
+        if (propSessionId && propSessionId !== sessionId) {
+            setSessionId(propSessionId);
+        }
+    }, [propSessionId]);
+
+    // Carrega histórico de mensagens da sessão atual
+    useEffect(() => {
+        setMessages([]); // Limpa mensagens da sessão anterior
+        let cancelled = false; // Previne atualizacao dupla (React StrictMode)
+        
+        authFetch(`/api/chat/messages?sessionId=${sessionId}&limit=50`)
             .then(r => r.json())
             .then(data => {
-                const loaded: Message[] = data.messages.map((m: any) => ({
+                if (cancelled) return;
+                const loaded: Message[] = (data.messages || []).map((m: any) => ({
                     id: String(m.id),
                     role: m.role,
                     content: m.content,
@@ -50,77 +74,97 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                 }
             })
             .catch(() => {
+                if (cancelled) return;
                 setMessages([{
                     id: 'welcome',
                     role: 'assistant',
                     content: "Estou pronto para renderizar sua visão. O que vamos criar hoje?",
                 }]);
             });
-    }, []);
+        
+        return () => { cancelled = true; }; // Cleanup previne duplicata
+    }, [sessionId]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, mediaUrl?: string, mediaType?: string, generationId?: number) => {
+    const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, mediaUrl?: string, mediaType?: string, generationId?: number, targetSessionId?: string) => {
         try {
             await authFetch('/api/chat/messages', {
                 method: 'POST',
-                body: JSON.stringify({ role, content, mediaUrl, mediaType, generationId }),
+                body: JSON.stringify({ role, content, mediaUrl, mediaType, generationId, sessionId: targetSessionId || sessionId }),
             });
         } catch { /* ignora erros de persistência */ }
-    }, [authFetch]);
+    }, [authFetch, sessionId]);
 
     const addMessage = useCallback((msg: Message) => {
         setMessages(prev => [...prev, msg]);
     }, []);
 
-    const handleNewChat = useCallback(async () => {
-        if (!confirm('Esta ação removerá todas as mensagens e mídias deste chat. Deseja continuar?')) return;
-        try {
-            await authFetch('/api/chat/messages', { method: 'DELETE' });
-            setMessages([{
-                id: 'welcome',
-                role: 'assistant',
-                content: "Estou pronto para renderizar sua visão. O que vamos criar hoje?",
-            }]);
-            setAttachedImage(null);
-            setPrompt('');
-        } catch (e) {
-            console.error('Erro ao limpar chat:', e);
-        }
-    }, [authFetch]);
+    // Nova conversa: gera um novo sessionId localmente sem apagar o histórico
+    const handleNewChat = useCallback(() => {
+        const newId = generateSessionId();
+        setSessionId(newId);
+        setMessages([{
+            id: 'welcome',
+            role: 'assistant',
+            content: "Nova conversa iniciada! O que vamos criar?",
+        }]);
+        setAttachedImages([]);
+        setPrompt('');
+        onSessionCreated?.(newId);
+
+        // Notifica a sidebar via evento customizado
+        window.dispatchEvent(new CustomEvent('chat:new-session', { detail: { sessionId: newId } }));
+    }, [onSessionCreated]);
 
     const handleSubmit = useCallback(async () => {
         const trimmedPrompt = prompt.trim();
-        if (!trimmedPrompt || isGenerating) return;
+        if ((!trimmedPrompt && attachedImages.length === 0) || isGenerating) return;
 
-        const mediaType = attachedImage ? (attachedImage.startsWith('data:video') ? 'video' : 'image') : undefined;
-
-        // Mensagem do usuário
-        const userMsg: Message = {
-            id: `user-${Date.now()}`,
-            role: 'user',
-            content: trimmedPrompt,
-            mediaUrl: attachedImage || undefined,
-            mediaType: mediaType,
-        };
-        addMessage(userMsg);
-        saveMessage('user', userMsg.content, userMsg.mediaUrl, userMsg.mediaType);
-
+        const localSessionId = sessionId; // captura o ID no momento do envio
+        const mediaList = [...attachedImages];
+        
+        setAttachedImages([]);
         setPrompt('');
         setIsGenerating(true);
         setGeneratingType(mode);
-        const currentImage = attachedImage;
-        setAttachedImage(null);
+
+        // Cria mensagens separadas para cada mídia anexada
+        mediaList.forEach((mediaUrl, idx) => {
+            const mediaType = mediaUrl.startsWith('data:video') ? 'video' : 'image';
+            const msg: Message = {
+                id: `user-media-${Date.now()}-${idx}`,
+                role: 'user',
+                content: '',
+                mediaUrl,
+                mediaType,
+            };
+            addMessage(msg);
+            saveMessage('user', '', mediaUrl, mediaType, undefined, localSessionId);
+        });
+
+        if (trimmedPrompt) {
+            const textMsg: Message = {
+                id: `user-text-${Date.now()}`,
+                role: 'user',
+                content: trimmedPrompt,
+            };
+            addMessage(textMsg);
+            saveMessage('user', trimmedPrompt, undefined, undefined, undefined, localSessionId);
+        }
+
+        // Usamos a última imagem da lista para os modelos de geração (Image-to-Image / Video)
+        const currentImage = mediaList.length > 0 ? mediaList[mediaList.length - 1] : undefined;
 
         try {
             if (mode === 'image') {
                 const result = await createImageGeneration({
                     prompt: trimmedPrompt,
                     inputImage: currentImage || undefined,
+                    sessionId: localSessionId, // Backend salva com sessão correta
                 });
-
                 const assistantMsg: Message = {
                     id: `assistant-${Date.now()}`,
                     role: 'assistant',
@@ -128,52 +172,68 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                     mediaUrl: result.image,
                     mediaType: 'image',
                 };
-                addMessage(assistantMsg);
-                onResult?.({ ...result, type: 'image', image: result.image });
+                
+                // Não precisa de saveMessage aqui: o backend já salvou com session correta
+                if (currentSessionIdRef.current === localSessionId) {
+                    addMessage(assistantMsg);
+                    onResult?.({ ...result, type: 'image', image: result.image });
+                }
 
             } else {
                 // Vídeo: assíncrono com polling
                 const { generationId } = await createVideoGeneration({
                     prompt: trimmedPrompt,
                     inputImage: currentImage || undefined,
+                    sessionId: localSessionId, // Backend salva com sessão correta
                 });
 
                 const stopPolling = pollStatus(
                     generationId,
                     (result) => {
-                        setIsGenerating(false);
+                        const videoUrl = result.video || `/api/generations/${generationId}/media`;
                         const assistantMsg: Message = {
                             id: `assistant-${Date.now()}`,
                             role: 'assistant',
                             content: result.title || 'Vídeo gerado com sucesso!',
-                            mediaUrl: result.video,
+                            mediaUrl: videoUrl,
                             mediaType: 'video',
                         };
-                        addMessage(assistantMsg);
-                        onResult?.({ ...result, type: 'video' });
+                        
+                        // Não precisa de saveMessage aqui: o backend já salvou com session correta
+                        if (currentSessionIdRef.current === localSessionId) {
+                            setIsGenerating(false);
+                            addMessage(assistantMsg);
+                            onResult?.({ ...result, type: 'video' });
+                        }
                     },
                     (error) => {
-                        setIsGenerating(false);
-                        addMessage({
-                            id: `error-${Date.now()}`,
-                            role: 'assistant',
-                            content: `Erro ao gerar vídeo: ${error}`,
-                        });
+                        if (currentSessionIdRef.current === localSessionId) {
+                            setIsGenerating(false);
+                            addMessage({
+                                id: `error-${Date.now()}`,
+                                role: 'assistant',
+                                content: `Erro ao gerar vídeo: ${error}`,
+                            });
+                        }
                     }
                 );
                 stopPollingRef.current = stopPolling;
-                return; // Não chama setIsGenerating(false) aqui — o polling faz isso
+                return;
             }
         } catch (error: any) {
-            addMessage({
-                id: `error-${Date.now()}`,
-                role: 'assistant',
-                content: `Erro: ${error.message || 'Falha ao gerar conteúdo'}`,
-            });
+            if (currentSessionIdRef.current === localSessionId) {
+                addMessage({
+                    id: `error-${Date.now()}`,
+                    role: 'assistant',
+                    content: `Erro: ${error.message || 'Falha ao gerar conteúdo'}`,
+                });
+            }
         } finally {
-            if (mode === 'image') setIsGenerating(false);
+            if (mode === 'image' && currentSessionIdRef.current === localSessionId) {
+                setIsGenerating(false);
+            }
         }
-    }, [prompt, isGenerating, mode, attachedImage, createImageGeneration, createVideoGeneration, pollStatus, addMessage, saveMessage, onResult]);
+    }, [prompt, isGenerating, mode, attachedImages, sessionId, createImageGeneration, createVideoGeneration, pollStatus, addMessage, saveMessage, onResult]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit();
@@ -186,7 +246,7 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                 const file = items[i].getAsFile();
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = () => setAttachedImage(reader.result as string);
+                    reader.onload = () => setAttachedImages(prev => [...prev, reader.result as string]);
                     reader.readAsDataURL(file);
                 }
             }
@@ -241,10 +301,10 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                 {/* New Chat Action */}
                 <button
                     onClick={handleNewChat}
-                    title="Nova Conversa e Limpar Histórico"
+                    title="Iniciar Nova Conversa (sem apagar o histórico)"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all text-zinc-500 hover:text-[#e27241] border border-transparent hover:border-[#e27241]/30 hover:bg-[#e27241]/10 bg-black/40 backdrop-blur-sm"
                 >
-                    <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                    <span className="material-symbols-outlined text-[14px]">add_comment</span>
                     Nova Conversa
                 </button>
             </div>
@@ -255,18 +315,22 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                 <div className="relative rounded-2xl p-2 flex items-end gap-2 border border-white/10 group-focus-within:border-[#e27241]/30 transition-all"
                      style={{ background: 'rgba(53,53,52,0.4)', backdropFilter: 'blur(40px)' }}>
 
-                    {/* Thumbnail da imagem anexada (se houver) */}
-                    {attachedImage && (
-                        <div className="relative group/img w-14 h-14 rounded-lg overflow-hidden border border-[#e27241]/30 flex-shrink-0 self-center ml-2 bg-black/50">
-                            {attachedImage.startsWith('data:video') ? (
-                                <video src={attachedImage} className="w-full h-full object-cover" muted playsInline />
-                            ) : (
-                                <img src={attachedImage} alt="Anexo" className="w-full h-full object-cover" />
-                            )}
-                            <button onClick={() => setAttachedImage(null)}
-                                className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                                <span className="material-symbols-outlined text-white text-sm">close</span>
-                            </button>
+                    {/* Thumbnails das mídias anexadas */}
+                    {attachedImages.length > 0 && (
+                        <div className="flex flex-wrap gap-2 self-center ml-2">
+                            {attachedImages.map((img, idx) => (
+                                <div key={idx} className="relative group/img w-14 h-14 rounded-lg overflow-hidden border border-[#e27241]/30 flex-shrink-0 bg-black/50">
+                                    {img.startsWith('data:video') ? (
+                                        <video src={img} className="w-full h-full object-cover" muted playsInline />
+                                    ) : (
+                                        <img src={img} alt="Anexo" className="w-full h-full object-cover" />
+                                    )}
+                                    <button onClick={() => setAttachedImages(prev => prev.filter((_, i) => i !== idx))}
+                                        className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-white text-sm">close</span>
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     )}
 
@@ -282,10 +346,17 @@ export function ChatInterface({ onResult }: ChatInterfaceProps) {
                         rows={1}
                     />
                     <div className="flex items-center gap-2 p-2 flex-shrink-0">
-                        <ImageAttachment value={attachedImage} onChange={setAttachedImage} />
+                        <ImageAttachment 
+                            value={null} // No longer shows single preview in button since we have thumbnails
+                            onChange={(imgUrl) => {
+                                if (imgUrl) {
+                                    setAttachedImages(prev => [...prev, imgUrl]);
+                                }
+                            }} 
+                        />
                         <button
                             onClick={handleSubmit}
-                            disabled={isGenerating || !prompt.trim()}
+                            disabled={isGenerating || (!prompt.trim() && attachedImages.length === 0)}
                             className="bg-[#e27241] text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                         >
                             <span>{isGenerating ? 'Gerando...' : 'Generate'}</span>

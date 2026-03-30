@@ -5,15 +5,26 @@ import tailwind from '@astrojs/tailwind';
 
 // https://astro.build/config
 export default defineConfig({
-    // Integrate React for UI components
     integrations: [react(), tailwind()],
-    // Generate a static site that can be served by any static hosted or Express
     output: 'static',
     vite: {
         server: {
             proxy: {
-                '/api': 'http://localhost:3000',
+                '/api': {
+                    target: 'http://localhost:3000',
+                    changeOrigin: true,
+                    // Disable response buffering so Range/streaming works
+                    configure: (proxy) => {
+                        proxy.on('proxyReq', (proxyReq, req) => {
+                            // Garante que Range header é repassado ao backend
+                            if (req.headers['range']) {
+                                proxyReq.setHeader('range', req.headers['range']);
+                            }
+                        });
+                    },
+                }
             }
         }
     }
 });
+

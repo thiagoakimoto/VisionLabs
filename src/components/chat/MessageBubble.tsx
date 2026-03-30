@@ -48,6 +48,7 @@ export function MessageBubble({ message, onImageClick }: MessageBubbleProps) {
                         <img 
                             src={message.mediaUrl} 
                             alt="Imagem" 
+                            loading="lazy"
                             className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => onImageClick?.(message.mediaUrl!)}
                         />
@@ -65,11 +66,19 @@ export function MessageBubble({ message, onImageClick }: MessageBubbleProps) {
                 {message.mediaUrl && message.mediaType === 'video' && (
                     <div className="relative group rounded-2xl overflow-hidden border border-[rgba(88,66,53,0.15)] max-w-sm w-full">
                         <video
-                            src={message.mediaUrl}
                             controls
-                            className="w-full h-auto"
+                            muted
+                            playsInline
+                            preload="auto"
+                            className="w-full h-auto bg-black"
                             style={{ maxHeight: '360px' }}
-                        />
+                            onError={(e) => {
+                                console.error('[Video] erro ao carregar:', message.mediaUrl, e);
+                            }}
+                        >
+                            <source src={message.mediaUrl} type="video/mp4" />
+                            Seu browser não suporta o elemento de vídeo.
+                        </video>
                         <a
                             href={message.mediaUrl}
                             download="visionlabs-video.mp4"

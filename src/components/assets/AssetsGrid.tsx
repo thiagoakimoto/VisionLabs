@@ -73,9 +73,11 @@ export function AssetsGrid() {
                         className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#e27241]/30 transition-all duration-300 bg-[#111]"
                     >
                         {asset.media_type.startsWith('video') ? (
-                            <video src={asset.media_url} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" muted />
+                            <video className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" muted playsInline preload="metadata">
+                                <source src={asset.media_url} type="video/mp4" />
+                            </video>
                         ) : (
-                            <img src={asset.media_url} alt="User Asset" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
+                            <img src={asset.media_url} alt="User Asset" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
                         )}
 
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-70" />
@@ -122,7 +124,9 @@ export function AssetsGrid() {
                     <div className="max-w-4xl w-full flex flex-col items-center justify-center p-6 border border-white/5 bg-[#0a0a0a] rounded-3xl" onClick={e => e.stopPropagation()}>
                         <div className="relative w-full flex justify-center max-h-[70vh]">
                             {selected.media_type.startsWith('video') ? (
-                                <video src={selected.media_url} controls autoPlay className="max-h-[70vh] rounded-lg object-contain" />
+                                <video controls autoPlay muted playsInline preload="auto" className="max-h-[70vh] rounded-lg object-contain">
+                                    <source src={selected.media_url} type="video/mp4" />
+                                </video>
                             ) : (
                                 <img src={selected.media_url} alt="User Asset" className="max-h-[70vh] rounded-lg object-contain shadow-2xl" />
                             )}

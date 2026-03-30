@@ -74,9 +74,11 @@ export function ProjectsGrid() {
                     >
                         {gen.resultUrl ? (
                             gen.type === 'video' ? (
-                                <video src={gen.resultUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" muted />
+                                <video className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" muted playsInline preload="metadata">
+                                    <source src={gen.resultUrl} type="video/mp4" />
+                                </video>
                             ) : (
-                                <img src={gen.resultUrl} alt={gen.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                                <img src={gen.resultUrl} alt={gen.title} loading="lazy" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                             )
                         ) : (
                             <div className="w-full h-full flex items-center justify-center">
@@ -140,7 +142,9 @@ export function ProjectsGrid() {
                         <div className="relative">
                             {selected.resultUrl && (
                                 selected.type === 'video' ? (
-                                    <video src={selected.resultUrl} controls autoPlay className="w-full max-h-[70vh] object-contain" />
+                                    <video controls autoPlay muted playsInline preload="auto" className="w-full max-h-[70vh] object-contain">
+                                        <source src={selected.resultUrl} type="video/mp4" />
+                                    </video>
                                 ) : (
                                     <img src={selected.resultUrl} alt={selected.title} className="w-full max-h-[70vh] object-contain" />
                                 )

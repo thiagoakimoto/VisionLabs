@@ -30,6 +30,7 @@ export function useGenerations() {
         prompt: string;
         inputImage?: string;
         aspectRatio?: string;
+        sessionId?: string;
     }): Promise<GenerationResult> => {
         const res = await authFetch('/api/generations/image', {
             method: 'POST',
@@ -46,6 +47,7 @@ export function useGenerations() {
         prompt: string;
         inputImage?: string;
         aspectRatio?: string;
+        sessionId?: string;
     }): Promise<{ generationId: number; status: string }> => {
         const res = await authFetch('/api/generations/video', {
             method: 'POST',
@@ -90,8 +92,9 @@ export function useGenerations() {
         return () => clearInterval(interval);
     }, [authFetch]);
 
-    const listGenerations = useCallback(async (limit = 20, offset = 0): Promise<Generation[]> => {
-        const res = await authFetch(`/api/generations?limit=${limit}&offset=${offset}`);
+    const listGenerations = useCallback(async (limit = 20, offset = 0, sessionId?: string): Promise<Generation[]> => {
+        const url = `/api/generations?limit=${limit}&offset=${offset}${sessionId ? `&sessionId=${sessionId}` : ''}`;
+        const res = await authFetch(url);
         if (!res.ok) return [];
         const data = await res.json();
         return data.generations.map((g: any) => ({
