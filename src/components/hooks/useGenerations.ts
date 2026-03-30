@@ -65,13 +65,17 @@ export function useGenerations() {
         onComplete: (result: GenerationResult) => void,
         onError: (error: string) => void
     ): (() => void) => {
+        let completed = false; // Guarda contra race condition: evita onComplete disparar 2x
+        
         const interval = setInterval(async () => {
+            if (completed) return; // Ignora se já finalizou
             try {
                 const res = await authFetch(`/api/generations/${generationId}/status`);
                 if (!res.ok) return;
                 const data = await res.json();
 
                 if (data.status === 'complete') {
+                    completed = true;
                     clearInterval(interval);
                     onComplete({
                         generationId: data.generationId,
@@ -80,6 +84,7 @@ export function useGenerations() {
                         title: data.title,
                     });
                 } else if (data.status === 'error') {
+                    completed = true;
                     clearInterval(interval);
                     onError(data.error || 'Erro desconhecido na geração');
                 }
@@ -89,7 +94,10 @@ export function useGenerations() {
         }, 5000);
 
         pollingRef.current = interval;
-        return () => clearInterval(interval);
+        return () => {
+            completed = true; // Marca como concluído mesmo ao cancelar
+            clearInterval(interval);
+        };
     }, [authFetch]);
 
     const listGenerations = useCallback(async (limit = 20, offset = 0, sessionId?: string): Promise<Generation[]> => {
