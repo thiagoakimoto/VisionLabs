@@ -260,9 +260,9 @@ export function ChatInterface({ onResult, sessionId: propSessionId, onSessionCre
     };
 
     return (
-        <div className="flex-1 flex flex-col justify-end max-w-4xl mx-auto w-full pb-10">
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full pb-2">
             {/* Messages */}
-            <div className="space-y-6 mb-10 overflow-y-auto pr-4 flex-1" style={{ maxHeight: 'calc(100vh - 320px)' }}>
+            <div className="space-y-6 mb-4 overflow-y-auto pr-4 flex-1" style={{ maxHeight: 'calc(100vh - 250px)' }}>
                 {messages.map(msg => (
                     <MessageBubble key={msg.id} message={msg} onImageClick={setZoomedImage} />
                 ))}
@@ -368,7 +368,7 @@ export function ChatInterface({ onResult, sessionId: propSessionId, onSessionCre
                 </div>
             </div>
 
-            <div className="flex justify-center gap-6 mt-6">
+            <div className="flex flex-wrap justify-center gap-3 md:gap-6 mt-4 md:mt-6 px-2">
                 <button onClick={() => setPrompt('Macro cinematográfico, hora dourada, musgo com partículas âmbar flutuando')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Cinematic 4K</button>
                 <button onClick={() => setPrompt('Fotografia macro extrema com bokeh suave e iluminação natural difusa')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Macro Photography</button>
                 <button onClick={() => setPrompt('Lente anamórfica, flares de luz azul, profundidade de campo rasa, noite urbana')} className="text-[10px] text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-zinc-300 transition-colors">Anamorphic Lens</button>

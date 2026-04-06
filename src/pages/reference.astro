@@ -1,0 +1,559 @@
+---
+---
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Reference · VisionLabs</title>
+    <meta name="description" content="Guia de referência completo dos modelos, parâmetros e melhores práticas do VisionLabs."/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --orange: #e27241;
+            --orange-dim: rgba(226,114,65,0.14);
+            --orange-border: rgba(226,114,65,0.22);
+            --bg: #080808;
+            --surface: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.07);
+            --text: #e4e4e7;
+            --muted: #71717a;
+            --subtle: #3f3f46;
+        }
+
+        html { background: var(--bg); }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--orange-dim); border-radius: 10px; }
+
+        /* ── Layout ── */
+        .wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
+        /* ── Navbar ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(8,8,8,0.88);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .navbar-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .navbar-left { display: flex; align-items: center; gap: 40px; }
+        .brand {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: -0.04em;
+            text-transform: uppercase;
+        }
+        .nav-links { display: flex; align-items: center; gap: 28px; }
+        .nav-link {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .nav-link:hover { color: #e4e4e7; }
+        .nav-link.active { color: var(--orange); border-bottom: 2px solid var(--orange); padding-bottom: 2px; }
+        .back-link {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 12px; color: var(--muted);
+            text-decoration: none; transition: color 0.15s;
+        }
+        .back-link:hover { color: var(--orange); }
+        .back-link .mi { font-size: 15px; font-family: 'Material Symbols Outlined'; }
+
+        /* ── Hero ── */
+        .hero {
+            padding: 72px 0 56px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 64px;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--orange-dim); border: 1px solid var(--orange-border);
+            color: var(--orange); font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            padding: 4px 12px; border-radius: 100px; margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: 52px; font-weight: 900; line-height: 1.08;
+            letter-spacing: -0.04em; color: #fff; margin-bottom: 20px;
+        }
+        .hero h1 span {
+            background: linear-gradient(120deg, #e27241, #ffba20);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p { font-size: 16px; color: var(--muted); max-width: 540px; line-height: 1.65; }
+
+        /* ── Section ── */
+        section { margin-bottom: 72px; }
+        .section-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--orange); margin-bottom: 8px;
+        }
+        .section-title {
+            font-size: 26px; font-weight: 800; letter-spacing: -0.03em;
+            color: #fff; margin-bottom: 6px;
+        }
+        .section-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+
+        /* ── Model Cards ── */
+        .model-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 620px) { .model-grid { grid-template-columns: 1fr; } }
+
+        .model-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .model-card:hover { border-color: var(--orange-border); background: rgba(255,255,255,0.045); }
+
+        .model-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+        .model-id { display: flex; align-items: center; gap: 12px; }
+        .model-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .model-icon .mi { font-family: 'Material Symbols Outlined'; font-size: 20px; }
+        .model-name { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .model-org { font-size: 12px; color: var(--subtle); margin-top: 2px; }
+        .model-desc { font-size: 13px; color: #a1a1aa; line-height: 1.6; margin-bottom: 16px; }
+        .model-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 100px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+            text-transform: uppercase; white-space: nowrap;
+        }
+        .b-green  { background: rgba(52,211,153,0.1);  color: #34d399; border: 1px solid rgba(52,211,153,0.2); }
+        .b-blue   { background: rgba(96,165,250,0.1);  color: #60a5fa; border: 1px solid rgba(96,165,250,0.2); }
+        .b-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange-border); }
+
+        /* ── Parameter Table ── */
+        .param-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .param-table { width: 100%; border-collapse: collapse; }
+        .param-table thead tr { background: rgba(255,255,255,0.025); }
+        .param-table th {
+            font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--subtle); font-weight: 700; padding: 12px 20px;
+            text-align: left; border-bottom: 1px solid var(--border);
+        }
+        .param-table td {
+            padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: top; font-size: 13px; color: #a1a1aa;
+        }
+        .param-table tr:last-child td { border-bottom: none; }
+        .param-table td.param-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px; color: #e4e4e7; white-space: nowrap;
+            width: 130px;
+        }
+        .param-table td.param-default {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px; color: var(--muted); white-space: nowrap; width: 80px;
+        }
+        .param-table td.param-type { width: 100px; }
+        .param-table td.param-desc { line-height: 1.55; }
+        .inline-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; color: var(--orange);
+            background: var(--orange-dim); padding: 1px 6px;
+            border-radius: 4px; white-space: nowrap;
+        }
+
+        /* ── Tips Grid ── */
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        @media (max-width: 700px) { .tips-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 480px) { .tips-grid { grid-template-columns: 1fr; } }
+
+        .tip-card {
+            background: rgba(226,114,65,0.05);
+            border: 1px solid rgba(226,114,65,0.13);
+            border-radius: 14px;
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+        .tip-card:hover { border-color: rgba(226,114,65,0.26); }
+        .tip-icon { font-family: 'Material Symbols Outlined'; font-size: 22px; color: var(--orange); display: block; margin-bottom: 12px; }
+        .tip-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .tip-text { font-size: 12px; color: #71717a; line-height: 1.6; }
+
+        /* ── Lifecycle ── */
+        .lifecycle {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+        }
+        .lifecycle-step {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+        .lifecycle-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: calc(50% + 20px);
+            right: calc(-50% + 20px);
+            height: 1px;
+            background: var(--border);
+        }
+        .lc-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-bottom: 12px; position: relative; z-index: 1;
+        }
+        .lc-icon .mi { font-family: 'Material Symbols Outlined'; font-size: 18px; }
+        .lc-label { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .lc-desc { font-size: 12px; color: var(--muted); line-height: 1.5; padding: 0 8px; }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 28px 0;
+            margin-top: 32px;
+        }
+        .footer-inner {
+            max-width: 900px; margin: 0 auto; padding: 0 32px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .footer-copy { font-size: 12px; color: var(--subtle); }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { font-size: 12px; color: var(--subtle); text-decoration: none; transition: color 0.15s; }
+        .footer-links a:hover { color: var(--orange); }
+
+        /* ── Orbs ── */
+        .orb {
+            position: fixed; border-radius: 50%; pointer-events: none;
+            filter: blur(130px); opacity: 0.09; z-index: 0;
+        }
+        body > *:not(.orb) { position: relative; z-index: 1; }
+    </style>
+</head>
+<body>
+    <div class="orb" style="width:640px;height:640px;background:#e27241;top:-220px;right:-160px;"></div>
+    <div class="orb" style="width:480px;height:480px;background:#6366f1;bottom:0;left:-160px;"></div>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="navbar-inner">
+            <div class="navbar-left">
+                <a href="/" class="brand">VisionLabs</a>
+                <nav class="nav-links">
+                    <a href="/" class="nav-link">Models</a>
+                    <a href="/reference" class="nav-link active">Reference</a>
+                    <a href="/docs" class="nav-link">API</a>
+                </nav>
+            </div>
+            <a href="/" class="back-link">
+                <span class="mi">arrow_back</span>
+                Workspace
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <div class="wrap">
+
+            <!-- Hero -->
+            <div class="hero">
+                <div class="hero-badge">
+                    <span class="mi" style="font-family:'Material Symbols Outlined';font-size:13px">menu_book</span>
+                    Documentação
+                </div>
+                <h1>Reference <span>Guide</span></h1>
+                <p>Modelos, parâmetros e melhores práticas para gerar imagens e vídeos extraordinários com o VisionLabs.</p>
+            </div>
+
+            <!-- Modelos -->
+            <section>
+                <p class="section-label">Modelos</p>
+                <h2 class="section-title">Modelos Disponíveis</h2>
+                <p class="section-sub">Os sistemas de IA que alimentam o VisionLabs, desenvolvidos pelo Google DeepMind.</p>
+
+                <div class="model-grid">
+                    <!-- Imagen 3 -->
+                    <div class="model-card">
+                        <div class="model-head">
+                            <div class="model-id">
+                                <div class="model-icon" style="background:rgba(226,114,65,0.12);border:1px solid rgba(226,114,65,0.2)">
+                                    <span class="mi" style="color:#e27241">image</span>
+                                </div>
+                                <div>
+                                    <div class="model-name">Imagen 3</div>
+                                    <div class="model-org">Google DeepMind</div>
+                                </div>
+                            </div>
+                            <span class="badge b-green">Disponível</span>
+                        </div>
+                        <p class="model-desc">Geração de imagens de alta fidelidade com compreensão semântica avançada. Ideal para imagens fotorrealistas, artwork e conceitos visuais com até 4K de resolução.</p>
+                        <div class="model-tags">
+                            <span class="badge b-blue">Text-to-Image</span>
+                            <span class="badge b-blue">Image-to-Image</span>
+                            <span class="badge b-orange">4K Ready</span>
+                        </div>
+                    </div>
+
+                    <!-- Veo 2 -->
+                    <div class="model-card">
+                        <div class="model-head">
+                            <div class="model-id">
+                                <div class="model-icon" style="background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.2)">
+                                    <span class="mi" style="color:#60a5fa">videocam</span>
+                                </div>
+                                <div>
+                                    <div class="model-name">Veo 2</div>
+                                    <div class="model-org">Google DeepMind</div>
+                                </div>
+                            </div>
+                            <span class="badge b-green">Disponível</span>
+                        </div>
+                        <p class="model-desc">Geração de vídeos a partir de imagens ou texto com movimentos de câmera naturais, física realista e qualidade cinematográfica em até 16:9 ou 9:16.</p>
+                        <div class="model-tags">
+                            <span class="badge b-blue">Image-to-Video</span>
+                            <span class="badge b-blue">Text-to-Video</span>
+                            <span class="badge b-orange">16:9 · 9:16</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Parâmetros Imagem -->
+            <section>
+                <p class="section-label">Imagen 3</p>
+                <h2 class="section-title">Parâmetros de Imagem</h2>
+                <p class="section-sub">Campos aceitos ao enviar um prompt de geração de imagem.</p>
+                <div class="param-wrap">
+                    <table class="param-table">
+                        <thead>
+                            <tr>
+                                <th>Campo</th>
+                                <th>Tipo</th>
+                                <th>Padrão</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="param-name">prompt</td>
+                                <td class="param-type"><span class="badge b-blue">string</span></td>
+                                <td class="param-default">—</td>
+                                <td class="param-desc">Descrição textual detalhada da imagem. Seja específico sobre composição, iluminação, estilo e atmosfera para melhores resultados.</td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">inputImage</td>
+                                <td class="param-type"><span class="badge" style="background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2)">base64</span></td>
+                                <td class="param-default">null</td>
+                                <td class="param-desc">Imagem de referência (Image-to-Image). Quando fornecida, o modelo edita ou transforma a imagem conforme o prompt.</td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">aspectRatio</td>
+                                <td class="param-type"><span class="badge b-blue">string</span></td>
+                                <td class="param-default">1:1</td>
+                                <td class="param-desc">Proporção da imagem. Opções: <code class="inline-code">1:1</code> <code class="inline-code">16:9</code> <code class="inline-code">9:16</code> <code class="inline-code">4:3</code></td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">sessionId</td>
+                                <td class="param-type"><span class="badge b-blue">string</span></td>
+                                <td class="param-default">auto</td>
+                                <td class="param-desc">ID da sessão de chat. Garante que a geração fique isolada no histórico correto da conversa.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Parâmetros Vídeo -->
+            <section>
+                <p class="section-label">Veo 2</p>
+                <h2 class="section-title">Parâmetros de Vídeo</h2>
+                <p class="section-sub">Campos aceitos ao enviar um prompt de geração de vídeo.</p>
+                <div class="param-wrap">
+                    <table class="param-table">
+                        <thead>
+                            <tr>
+                                <th>Campo</th>
+                                <th>Tipo</th>
+                                <th>Padrão</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="param-name">prompt</td>
+                                <td class="param-type"><span class="badge b-blue">string</span></td>
+                                <td class="param-default">—</td>
+                                <td class="param-desc">Descrição da cena, personagens e movimento. Use termos cinematográficos para definir o estilo visual.</td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">inputImage</td>
+                                <td class="param-type"><span class="badge" style="background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2)">base64</span></td>
+                                <td class="param-default">null</td>
+                                <td class="param-desc">Frame inicial do vídeo (Image-to-Video). O modelo anima a imagem de acordo com as ações descritas no prompt.</td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">aspectRatio</td>
+                                <td class="param-type"><span class="badge b-blue">string</span></td>
+                                <td class="param-default">16:9</td>
+                                <td class="param-desc">Proporção do vídeo. <code class="inline-code">16:9</code> para landscape, <code class="inline-code">9:16</code> para portrait/reels.</td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">sessionId</td>
+                                <td class="param-type"><span class="badge b-blue">string</span></td>
+                                <td class="param-default">auto</td>
+                                <td class="param-desc">ID da sessão de chat para isolamento no histórico. Cada chat mantém suas gerações separadas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Dicas de Prompt -->
+            <section>
+                <p class="section-label">Boas Práticas</p>
+                <h2 class="section-title">Dicas de Prompt</h2>
+                <p class="section-sub">Técnicas testadas para obter os melhores resultados do Imagen 3 e Veo 2.</p>
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <span class="tip-icon">movie</span>
+                        <p class="tip-title">Seja cinematográfico</p>
+                        <p class="tip-text">Use "cinematic shot", "depth of field", "golden hour", "anamorphic lens" para elevar drasticamente a qualidade visual.</p>
+                    </div>
+                    <div class="tip-card">
+                        <span class="tip-icon">palette</span>
+                        <p class="tip-title">Descreva a atmosfera</p>
+                        <p class="tip-text">Especifique cores e temperatura ("frio e azulado", "quente âmbar") para criar uma paleta visual consistente e intencional.</p>
+                    </div>
+                    <div class="tip-card">
+                        <span class="tip-icon">motion_photos_on</span>
+                        <p class="tip-title">Defina o movimento</p>
+                        <p class="tip-text">No vídeo use "pan left", "slow zoom", "camera orbits", "dolly forward" para controlar o movimento de câmera com precisão.</p>
+                    </div>
+                    <div class="tip-card">
+                        <span class="tip-icon">add_photo_alternate</span>
+                        <p class="tip-title">Use imagens de referência</p>
+                        <p class="tip-text">Anexe uma imagem junto com o prompt para Image-to-Image ou Image-to-Video. O resultado fica muito mais preciso e controlado.</p>
+                    </div>
+                    <div class="tip-card">
+                        <span class="tip-icon">brush</span>
+                        <p class="tip-title">Referencie estilos</p>
+                        <p class="tip-text">"Film noir", "watercolor", "macro photography", "hyperrealistic CGI" funcionam bem para definir a linguagem visual do resultado.</p>
+                    </div>
+                    <div class="tip-card">
+                        <span class="tip-icon">auto_awesome</span>
+                        <p class="tip-title">Use os atalhos</p>
+                        <p class="tip-text">Os chips abaixo do input ("Cinematic 4K", "Macro Photography") inserem automaticamente terminologia profissional no seu prompt.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ciclo de Vida -->
+            <section>
+                <p class="section-label">Processamento</p>
+                <h2 class="section-title">Ciclo de Vida de uma Geração</h2>
+                <p class="section-sub">Como o sistema processa e entrega seus resultados.</p>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px 24px">
+                    <div class="lifecycle">
+                        <div class="lifecycle-step">
+                            <div class="lc-icon" style="background:rgba(226,114,65,0.12);border:1px solid rgba(226,114,65,0.2)">
+                                <span class="mi" style="color:#e27241">send</span>
+                            </div>
+                            <div class="lc-label">Enviado</div>
+                            <div class="lc-desc">Prompt e imagem de referência são enviados ao servidor</div>
+                        </div>
+                        <div class="lifecycle-step">
+                            <div class="lc-icon" style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.2)">
+                                <span class="mi" style="color:#fbbf24">cloud_sync</span>
+                            </div>
+                            <div class="lc-label">Processando</div>
+                            <div class="lc-desc">Google GenAI processa nos servidores do DeepMind</div>
+                        </div>
+                        <div class="lifecycle-step">
+                            <div class="lc-icon" style="background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.2)">
+                                <span class="mi" style="color:#60a5fa">save</span>
+                            </div>
+                            <div class="lc-label">Salvo</div>
+                            <div class="lc-desc">Resultado salvo no banco de dados associado à sua sessão</div>
+                        </div>
+                        <div class="lifecycle-step">
+                            <div class="lc-icon" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.2)">
+                                <span class="mi" style="color:#34d399">done_all</span>
+                            </div>
+                            <div class="lc-label">Completo</div>
+                            <div class="lc-desc">Disponível no chat e no histórico de projetos</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <p class="footer-copy">© 2025 VisionLabs. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/reference">Reference</a>
+                <a href="/docs">API Docs</a>
+                <a href="/">Workspace</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

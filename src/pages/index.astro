@@ -81,6 +81,46 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
         .chat-history-item:hover .chat-history-delete {
             opacity: 1;
         }
+
+        /* ── Mobile overlay para sidebar ── */
+        #mobile-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 49;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        #mobile-overlay.active { display: block; }
+
+        @media (max-width: 767px) {
+            /* Sidebar vira drawer fixo no mobile */
+            #left-sidebar {
+                position: fixed !important;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                height: 100vh !important;
+                width: 78vw !important;
+                max-width: 300px;
+                z-index: 50;
+                transform: translateX(-110%);
+                transition: transform 0.3s cubic-bezier(0.4,0,0.2,1) !important;
+                padding: 1rem !important;
+            }
+            #left-sidebar.mobile-open {
+                transform: translateX(0) !important;
+            }
+            /* Esconde painel de preview no mobile */
+            #preview-root {
+                display: none !important;
+            }
+            /* Esconde o botão do preview panel no mobile */
+            #right-menu-toggle {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col selection:bg-[#e27241]/30 selection:text-white">
@@ -100,9 +140,9 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
             </button>
             <span class="text-lg font-black text-white tracking-tighter uppercase">VisionLabs</span>
             <nav class="hidden md:flex gap-8">
-                <a class="text-[#e27241] font-bold border-b-2 border-[#e27241] uppercase tracking-widest text-[10px] py-1" href="#">Models</a>
-                <a class="text-zinc-400 font-medium uppercase tracking-widest text-[10px] py-1 hover:text-[#e27241] transition-colors" href="#">Reference</a>
-                <a class="text-zinc-400 font-medium uppercase tracking-widest text-[10px] py-1 hover:text-[#e27241] transition-colors" href="#">API</a>
+                <a class="text-[#e27241] font-bold border-b-2 border-[#e27241] uppercase tracking-widest text-[10px] py-1" href="/">Models</a>
+                <a class="text-zinc-400 font-medium uppercase tracking-widest text-[10px] py-1 hover:text-[#e27241] transition-colors" href="/reference">Reference</a>
+                <a class="text-zinc-400 font-medium uppercase tracking-widest text-[10px] py-1 hover:text-[#e27241] transition-colors" href="/docs">API</a>
             </nav>
         </div>
         <div class="flex items-center gap-4">
@@ -120,6 +160,9 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
             </div>
         </div>
     </header>
+
+    <!-- Overlay mobile para fechar sidebar -->
+    <div id="mobile-overlay"></div>
 
     <div class="flex flex-1 overflow-hidden relative">
         <!-- Misty Background -->
@@ -181,12 +224,12 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
         </aside>
 
         <!-- Main Content + Preview (React island compartilhado) -->
-        <main class="flex-1 flex flex-col relative z-10 px-8 py-6 gap-4 overflow-hidden min-w-0">
-            <div class="flex flex-col gap-2 flex-shrink-0">
-                <h1 class="text-4xl font-bold text-white tracking-tighter max-w-2xl leading-tight">
+        <main class="flex-1 flex flex-col relative z-10 px-4 py-1 md:px-8 md:py-2 gap-4 overflow-hidden min-w-0">
+            <div class="flex flex-col gap-1 flex-shrink-0">
+                <h1 class="text-2xl md:text-4xl font-bold text-white tracking-tighter max-w-2xl leading-tight">
                     Create <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#e27241] to-[#ffba20]">Visual Realities</span> Through Pure Intent.
                 </h1>
-                <p class="text-zinc-400 font-light text-sm">Powered by Gemini 2.5 Flash · Veo 3.1</p>
+                <p class="text-zinc-400 font-light text-xs md:text-sm">Powered by Gemini 2.5 Flash · Veo 3.1</p>
             </div>
 
             <!-- WorkspaceApp renderiza ChatInterface aqui e PreviewPanel via portal no #preview-root -->
@@ -195,6 +238,40 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
 
         <!-- Preview Panel container (preenchido pelo portal React) -->
         <aside id="preview-root" class="w-96 glass-panel border-l border-white/5 flex flex-col p-6 gap-6 z-10 overflow-y-auto flex-shrink-0 transition-all duration-300"></aside>
+    </div>
+
+    <!-- Modal de confirmação de deleção -->
+    <div id="delete-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4" style="display:none!important">
+        <!-- Backdrop -->
+        <div id="delete-modal-backdrop" class="absolute inset-0" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(8px)"></div>
+        <!-- Card -->
+        <div class="relative z-10 w-full max-w-md rounded-2xl border border-white/10 p-6 flex flex-col gap-5" style="background:rgba(18,18,18,0.95)">
+            <!-- Ícone -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25)">
+                    <span class="material-symbols-outlined text-red-400" style="font-size:20px">delete_forever</span>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-white">Deletar conversa?</p>
+                    <p class="text-[11px] text-zinc-500">Esta ação não pode ser desfeita.</p>
+                </div>
+            </div>
+            <!-- Título da conversa -->
+            <div class="rounded-lg px-4 py-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-600 mb-1">Conversa</p>
+                <p id="delete-modal-title" class="text-sm text-zinc-200 font-medium truncate">Sem título</p>
+            </div>
+            <!-- Botões -->
+            <div class="flex gap-3">
+                <button id="delete-modal-cancel" class="flex-1 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-colors" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)">Cancelar</button>
+                <button id="delete-modal-confirm" class="flex-1 py-2.5 rounded-lg text-sm font-bold text-white transition-all hover:brightness-110 active:scale-95" style="background:linear-gradient(135deg,#dc2626,#b91c1c);border:1px solid rgba(220,38,38,0.3)">
+                    <span class="flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+                        Deletar
+                    </span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -206,19 +283,45 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
 
         const menuToggle = document.getElementById('menu-toggle');
         const sidebar = document.getElementById('left-sidebar');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+
+        function closeSidebarMobile() {
+            sidebar?.classList.remove('mobile-open');
+            mobileOverlay?.classList.remove('active');
+        }
 
         if (menuToggle && sidebar) {
             menuToggle.addEventListener('click', () => {
-                const isOpen = !sidebar.classList.contains('w-0');
-                if (isOpen) {
-                    sidebar.classList.remove('w-64', 'p-4', 'border-r');
-                    sidebar.classList.add('w-0', 'p-0', 'border-none', 'opacity-0');
+                if (window.innerWidth < 768) {
+                    // Mobile: drawer overlay
+                    const isOpen = sidebar.classList.contains('mobile-open');
+                    if (isOpen) {
+                        closeSidebarMobile();
+                    } else {
+                        sidebar.classList.add('mobile-open');
+                        mobileOverlay?.classList.add('active');
+                    }
                 } else {
-                    sidebar.classList.remove('w-0', 'p-0', 'border-none', 'opacity-0');
-                    sidebar.classList.add('w-64', 'p-4', 'border-r');
+                    // Desktop: push content
+                    const isOpen = !sidebar.classList.contains('w-0');
+                    if (isOpen) {
+                        sidebar.classList.remove('w-64', 'p-4', 'border-r');
+                        sidebar.classList.add('w-0', 'p-0', 'border-none', 'opacity-0');
+                    } else {
+                        sidebar.classList.remove('w-0', 'p-0', 'border-none', 'opacity-0');
+                        sidebar.classList.add('w-64', 'p-4', 'border-r');
+                    }
                 }
             });
         }
+
+        // Fechar sidebar ao clicar no overlay (mobile)
+        mobileOverlay?.addEventListener('click', closeSidebarMobile);
+
+        // Fechar sidebar automaticamente ao trocar de chat (mobile)
+        window.addEventListener('chat:switch-session', () => {
+            if (window.innerWidth < 768) closeSidebarMobile();
+        });
 
         // Right Menu Toggle
         const rightToggle = document.getElementById('right-menu-toggle');
@@ -278,13 +381,10 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
                     if (e.target.closest('.chat-history-delete')) return;
                     switchSession(s.session_id, item);
                 });
-                item.querySelector('.chat-history-delete').addEventListener('click', async () => {
-                    if (!confirm('Deletar esta conversa?')) return;
-                    await fetch(`/api/chat/sessions/${s.session_id}`, {
-                        method: 'DELETE',
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    loadChatHistory();
+                item.querySelector('.chat-history-delete').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const fullTitle = s.title || 'Sem título';
+                    showDeleteModal(s.session_id, fullTitle);
                 });
                 historyList.appendChild(item);
             });
@@ -301,8 +401,59 @@ import { WorkspaceApp } from '../components/WorkspaceApp';
         // Escuta nova conversa criada pelo React
         window.addEventListener('chat:new-session', (e) => {
             activeSessionId = e.detail.sessionId;
-            // Recarrega histórico para mostrar a nova sessão quando for salva
             setTimeout(loadChatHistory, 2000);
+        });
+
+        // ---- Modal de deleção ----
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteModalTitle = document.getElementById('delete-modal-title');
+        const deleteModalCancel = document.getElementById('delete-modal-cancel');
+        const deleteModalConfirm = document.getElementById('delete-modal-confirm');
+        const deleteModalBackdrop = document.getElementById('delete-modal-backdrop');
+        let pendingDeleteSessionId = null;
+
+        function showDeleteModal(sessionId, title) {
+            pendingDeleteSessionId = sessionId;
+            deleteModalTitle.textContent = title;
+            deleteModal.style.removeProperty('display');
+            deleteModal.style.display = 'flex';
+            // Animação de entrada
+            deleteModal.style.opacity = '0';
+            deleteModal.querySelector('.relative.z-10').style.transform = 'scale(0.95) translateY(8px)';
+            requestAnimationFrame(() => {
+                deleteModal.style.transition = 'opacity 0.2s';
+                deleteModal.querySelector('.relative.z-10').style.transition = 'transform 0.2s, opacity 0.2s';
+                deleteModal.style.opacity = '1';
+                deleteModal.querySelector('.relative.z-10').style.transform = 'scale(1) translateY(0)';
+            });
+        }
+
+        function hideDeleteModal() {
+            deleteModal.style.opacity = '0';
+            deleteModal.querySelector('.relative.z-10').style.transform = 'scale(0.95) translateY(8px)';
+            setTimeout(() => { deleteModal.style.display = 'none'; }, 200);
+            pendingDeleteSessionId = null;
+        }
+
+        deleteModalCancel?.addEventListener('click', hideDeleteModal);
+        deleteModalBackdrop?.addEventListener('click', hideDeleteModal);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideDeleteModal(); });
+
+        deleteModalConfirm?.addEventListener('click', async () => {
+            if (!pendingDeleteSessionId) return;
+            deleteModalConfirm.disabled = true;
+            deleteModalConfirm.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>';
+            try {
+                await fetch(`/api/chat/sessions/${pendingDeleteSessionId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                hideDeleteModal();
+                loadChatHistory();
+            } finally {
+                deleteModalConfirm.disabled = false;
+                deleteModalConfirm.innerHTML = '<span class="flex items-center justify-center gap-1.5"><span class="material-symbols-outlined" style="font-size:14px">delete</span>Deletar</span>';
+            }
         });
 
         // Carrega ao inicializar

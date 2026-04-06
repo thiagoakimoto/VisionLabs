@@ -1,0 +1,728 @@
+---
+---
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>API · VisionLabs</title>
+    <meta name="description" content="Aprenda como usar a API REST do VisionLabs para gerar imagens e vídeos programaticamente."/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --orange: #e27241;
+            --orange-dim: rgba(226,114,65,0.12);
+            --orange-border: rgba(226,114,65,0.2);
+            --bg: #080808;
+            --surface: rgba(255,255,255,0.03);
+            --surface2: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.07);
+            --text: #e4e4e7;
+            --muted: #71717a;
+            --subtle: #3f3f46;
+        }
+
+        html, body { background: var(--bg); }
+        body {
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            line-height: 1.65;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--orange-dim); border-radius: 10px; }
+
+        /* ── Layout ── */
+        .page-wrap {
+            display: flex;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 32px;
+            gap: 56px;
+        }
+
+        /* ── Navbar ── */
+        .navbar {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(8,8,8,0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .navbar-inner {
+            max-width: 960px; margin: 0 auto;
+            padding: 0 32px; height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .navbar-left { display: flex; align-items: center; gap: 40px; }
+        .brand {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px; font-weight: 900;
+            color: #fff; text-decoration: none;
+            letter-spacing: -0.04em; text-transform: uppercase;
+        }
+        .nav-links { display: flex; gap: 28px; }
+        .nav-link {
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            color: var(--muted); text-decoration: none; transition: color 0.15s;
+        }
+        .nav-link:hover { color: #e4e4e7; }
+        .nav-link.active { color: var(--orange); border-bottom: 2px solid var(--orange); padding-bottom: 2px; }
+        .back-link {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 12px; color: var(--muted);
+            text-decoration: none; transition: color 0.15s;
+        }
+        .back-link:hover { color: var(--orange); }
+        .mi { font-family: 'Material Symbols Outlined'; font-size: 16px; vertical-align: middle; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 196px;
+            flex-shrink: 0;
+            padding-top: 48px;
+        }
+        .sidebar-sticky {
+            position: sticky; top: 80px;
+        }
+        .sidebar-group {
+            margin-bottom: 24px;
+        }
+        .sidebar-group-label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--subtle);
+            padding: 0 8px; margin-bottom: 6px; display: block;
+        }
+        .sidebar-link {
+            display: block;
+            font-size: 13px; color: var(--muted);
+            text-decoration: none; padding: 5px 8px;
+            border-radius: 6px; transition: all 0.15s;
+            border-left: 2px solid transparent;
+        }
+        .sidebar-link:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+        .sidebar-link.active {
+            color: var(--orange);
+            border-left-color: var(--orange);
+            background: var(--orange-dim);
+        }
+
+        /* ── Content ── */
+        .content {
+            flex: 1;
+            min-width: 0;
+            padding: 48px 0 80px;
+        }
+
+        /* ── Hero ── */
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--orange-dim); border: 1px solid var(--orange-border);
+            color: var(--orange); font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            padding: 4px 12px; border-radius: 100px; margin-bottom: 20px;
+        }
+        .page-title {
+            font-size: 44px; font-weight: 900; line-height: 1.1;
+            letter-spacing: -0.04em; color: #fff; margin-bottom: 16px;
+        }
+        .page-title span {
+            background: linear-gradient(120deg, #e27241, #ffba20);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .page-intro { font-size: 15px; color: var(--muted); max-width: 520px; line-height: 1.7; margin-bottom: 48px; padding-bottom: 48px; border-bottom: 1px solid var(--border); }
+
+        /* ── Section ── */
+        .doc-section { margin-bottom: 56px; }
+        .section-anchor { scroll-margin-top: 80px; }
+        .section-number {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 26px; height: 26px; border-radius: 7px;
+            background: var(--orange-dim); border: 1px solid var(--orange-border);
+            color: var(--orange); font-size: 12px; font-weight: 800;
+            flex-shrink: 0; margin-right: 10px;
+        }
+        .section-head { display: flex; align-items: center; margin-bottom: 12px; }
+        .section-title { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+        .section-desc { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.65; }
+
+        /* ── Info Box ── */
+        .info-box {
+            border-radius: 12px; padding: 16px 20px;
+            display: flex; gap: 12px; margin-bottom: 20px;
+        }
+        .info-box.orange { background: var(--orange-dim); border: 1px solid var(--orange-border); }
+        .info-box.blue   { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2); }
+        .info-box.green  { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); }
+        .info-box .box-icon { font-family: 'Material Symbols Outlined'; font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+        .info-box .box-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        .info-box .box-text { font-size: 13px; color: #a1a1aa; line-height: 1.6; }
+        .info-box.orange .box-icon, .info-box.orange .box-title { color: var(--orange); }
+        .info-box.blue .box-icon, .info-box.blue .box-title { color: #60a5fa; }
+        .info-box.green .box-icon, .info-box.green .box-title { color: #34d399; }
+
+        /* ── Steps ── */
+        .step-list { display: flex; flex-direction: column; gap: 2px; }
+        .step {
+            display: flex; gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .step:last-child { border-bottom: none; }
+        .step-num {
+            width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+            background: var(--surface2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 800; color: var(--orange);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .step-body { flex: 1; }
+        .step-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .step-text { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+        /* ── Code snippet ── */
+        .code-wrap {
+            border-radius: 12px; overflow: hidden;
+            border: 1px solid var(--border); margin: 16px 0;
+        }
+        .code-header {
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .code-label { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+        .copy-btn {
+            background: none; border: none; cursor: pointer;
+            font-size: 11px; color: var(--muted); font-family: 'Outfit', sans-serif;
+            padding: 2px 8px; border-radius: 4px; transition: all 0.15s;
+        }
+        .copy-btn:hover { background: var(--surface2); color: var(--text); }
+        pre {
+            background: #0a0a0a;
+            padding: 18px 20px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            line-height: 1.75;
+        }
+        .k { color: #a78bfa; }
+        .s { color: #34d399; }
+        .n { color: #60a5fa; }
+        .v { color: #e27241; }
+        .c { color: #3f3f46; font-style: italic; }
+        .prop { color: #94a3b8; }
+
+        /* ── Endpoint row ── */
+        .endpoint-row {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+        }
+        .method {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; font-weight: 700;
+            padding: 3px 8px; border-radius: 5px; flex-shrink: 0; min-width: 52px; text-align: center;
+        }
+        .method.get    { background: rgba(52,211,153,0.12); color: #34d399; }
+        .method.post   { background: var(--orange-dim);     color: var(--orange); }
+        .method.delete { background: rgba(239,68,68,0.12);  color: #f87171; }
+        .ep-path { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); flex: 1; }
+        .ep-desc { font-size: 12px; color: var(--muted); text-align: right; }
+
+        /* ── Error table ── */
+        .err-table { width: 100%; border-collapse: collapse; }
+        .err-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--subtle); font-weight: 700; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        .err-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; color: #a1a1aa; }
+        .err-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #f87171; width: 60px; }
+        .err-table td:nth-child(2) { color: var(--text); width: 160px; }
+        .err-table tr:last-child td { border-bottom: none; }
+        .err-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+
+        /* ── Orbs ── */
+        .orb { position: fixed; border-radius: 50%; pointer-events: none; filter: blur(130px); opacity: 0.07; z-index: 0; }
+        .navbar, .content, .sidebar { position: relative; z-index: 1; }
+
+        /* ── Footer ── */
+        footer { border-top: 1px solid var(--border); padding: 28px 0; }
+        .footer-inner { max-width: 960px; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; }
+        .footer-copy { font-size: 12px; color: var(--subtle); }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { font-size: 12px; color: var(--subtle); text-decoration: none; transition: color 0.15s; }
+        .footer-links a:hover { color: var(--orange); }
+
+        @media (max-width: 680px) {
+            .sidebar { display: none; }
+            .page-wrap { padding: 0 20px; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb" style="width:600px;height:600px;background:#e27241;top:-200px;right:-150px;"></div>
+    <div class="orb" style="width:480px;height:480px;background:#6366f1;bottom:50px;left:-150px;"></div>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="navbar-inner">
+            <div class="navbar-left">
+                <a href="/" class="brand">VisionLabs</a>
+                <nav class="nav-links">
+                    <a href="/" class="nav-link">Models</a>
+                    <a href="/reference" class="nav-link">Reference</a>
+                    <a href="/docs" class="nav-link active">API</a>
+                </nav>
+            </div>
+            <a href="/" class="back-link">
+                <span class="mi">arrow_back</span>
+                Workspace
+            </a>
+        </div>
+    </header>
+
+    <div class="page-wrap">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-sticky">
+                <div class="sidebar-group">
+                    <span class="sidebar-group-label">Começando</span>
+                    <a href="#overview" class="sidebar-link">Visão Geral</a>
+                    <a href="#auth" class="sidebar-link">Autenticação</a>
+                    <a href="#requests" class="sidebar-link">Fazendo Requisições</a>
+                </div>
+                <div class="sidebar-group">
+                    <span class="sidebar-group-label">Gerações</span>
+                    <a href="#gen-image" class="sidebar-link">Gerar Imagem</a>
+                    <a href="#gen-video" class="sidebar-link">Gerar Vídeo</a>
+                    <a href="#polling" class="sidebar-link">Acompanhar Status</a>
+                </div>
+                <div class="sidebar-group">
+                    <span class="sidebar-group-label">Histórico</span>
+                    <a href="#chat" class="sidebar-link">Sessões de Chat</a>
+                    <a href="#errors" class="sidebar-link">Erros</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Conteúdo -->
+        <main class="content">
+
+            <!-- Hero -->
+            <div class="hero-badge">
+                <span class="mi" style="font-size:13px">api</span>
+                REST API
+            </div>
+            <h1 class="page-title">Como usar a <span>API</span></h1>
+            <p class="page-intro">
+                O VisionLabs expõe uma API REST simples para gerar imagens e vídeos com IA, gerenciar sessões de chat e acessar o histórico de criações — tudo via HTTP.
+            </p>
+
+            <!-- ───────────────────────────────── VISÃO GERAL -->
+            <div class="doc-section">
+                <div id="overview" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">1</span>
+                    <h2 class="section-title">Visão Geral</h2>
+                </div>
+                <p class="section-desc">A API segue o padrão REST, aceita e retorna JSON, e utiliza autenticação via Bearer Token JWT. Todos os endpoints ficam sob o prefixo <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange);background:var(--orange-dim);padding:2px 7px;border-radius:5px">/api</code>.</p>
+
+                <div class="info-box orange">
+                    <span class="box-icon">hub</span>
+                    <div>
+                        <div class="box-title">Base URL</div>
+                        <div class="box-text">Em produção (Vercel): <strong style="color:#e4e4e7">https://seu-dominio.vercel.app/api</strong><br/>Em desenvolvimento local: <strong style="color:#e4e4e7">http://localhost:3000/api</strong></div>
+                    </div>
+                </div>
+
+                <p style="font-size:14px;color:var(--muted);margin-bottom:16px">Endpoints disponíveis:</p>
+                <div>
+                    <div class="endpoint-row"><span class="method post">POST</span><span class="ep-path">/auth/register</span><span class="ep-desc">Criar conta</span></div>
+                    <div class="endpoint-row"><span class="method post">POST</span><span class="ep-path">/auth/login</span><span class="ep-desc">Autenticar</span></div>
+                    <div class="endpoint-row"><span class="method post">POST</span><span class="ep-path">/generations/image</span><span class="ep-desc">Gerar imagem</span></div>
+                    <div class="endpoint-row"><span class="method post">POST</span><span class="ep-path">/generations/video</span><span class="ep-desc">Iniciar vídeo</span></div>
+                    <div class="endpoint-row"><span class="method get">GET</span><span class="ep-path">/generations/:id/status</span><span class="ep-desc">Status da geração</span></div>
+                    <div class="endpoint-row"><span class="method get">GET</span><span class="ep-path">/generations/:id/media</span><span class="ep-desc">Baixar mídia</span></div>
+                    <div class="endpoint-row"><span class="method get">GET</span><span class="ep-path">/chat/messages?sessionId=</span><span class="ep-desc">Mensagens do chat</span></div>
+                    <div class="endpoint-row"><span class="method get">GET</span><span class="ep-path">/chat/sessions</span><span class="ep-desc">Listar chats</span></div>
+                    <div class="endpoint-row"><span class="method delete">DELETE</span><span class="ep-path">/chat/sessions/:sessionId</span><span class="ep-desc">Deletar chat</span></div>
+                </div>
+            </div>
+
+            <!-- ───────────────────────────────── AUTH -->
+            <div class="doc-section">
+                <div id="auth" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">2</span>
+                    <h2 class="section-title">Autenticação</h2>
+                </div>
+                <p class="section-desc">A API usa <strong style="color:var(--text)">JWT (JSON Web Token)</strong>. Após fazer login, você recebe um token que deve ser enviado no header de todas as requisições protegidas.</p>
+
+                <div class="step-list">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-body">
+                            <div class="step-title">Criar sua conta</div>
+                            <div class="step-text">Envie seu nome, e-mail e senha para <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">/auth/register</code>. A resposta já inclui um token JWT pronto para uso.</div>
+                            <div class="code-wrap">
+                                <div class="code-header">
+                                    <span class="code-label">POST /api/auth/register</span>
+                                    <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                                </div>
+                                <pre>&#123;
+  <span class="n">"name"</span>: <span class="s">"Seu nome"</span>,
+  <span class="n">"email"</span>: <span class="s">"email@exemplo.com"</span>,
+  <span class="n">"password"</span>: <span class="s">"sua_senha"</span>
+&#125;
+
+<span class="c">// Resposta</span>
+&#123;
+  <span class="n">"token"</span>: <span class="s">"eyJhbGci..."</span>,
+  <span class="n">"user"</span>: &#123; <span class="n">"id"</span>: <span class="v">1</span>, <span class="n">"name"</span>: <span class="s">"Seu nome"</span> &#125;
+&#125;</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-body">
+                            <div class="step-title">Guarde o token</div>
+                            <div class="step-text">O token JWT retornado é válido por <strong style="color:var(--text)">7 dias</strong>. Guarde-o em <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">localStorage</code> ou em uma variável de ambiente segura.</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-body">
+                            <div class="step-title">Envie no header de cada requisição</div>
+                            <div class="step-text">Todo endpoint protegido requer o header <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">Authorization</code> com o token.</div>
+                            <div class="code-wrap">
+                                <div class="code-header"><span class="code-label">Header obrigatório</span></div>
+                                <pre>Authorization: Bearer eyJhbGci...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ───────────────────────────────── REQUESTS -->
+            <div class="doc-section">
+                <div id="requests" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">3</span>
+                    <h2 class="section-title">Fazendo Requisições</h2>
+                </div>
+                <p class="section-desc">Todas as requisições com body devem enviar <strong style="color:var(--text)">JSON</strong> com o header <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">Content-Type: application/json</code>. Veja um exemplo completo com fetch:</p>
+
+                <div class="code-wrap">
+                    <div class="code-header">
+                        <span class="code-label">JavaScript · fetch</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                    <pre><span class="k">const</span> token = localStorage.getItem(<span class="s">'visionlabs_token'</span>);
+
+<span class="k">const</span> response = <span class="k">await</span> fetch(<span class="s">'/api/generations/image'</span>, {
+  method: <span class="s">'POST'</span>,
+  headers: {
+    <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span>,
+    <span class="s">'Authorization'</span>: `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    prompt: <span class="s">'Aerial view of mountain peaks at golden hour, cinematic 4K'</span>,
+    aspectRatio: <span class="s">'16:9'</span>
+  })
+});
+
+<span class="k">const</span> data = <span class="k">await</span> response.json();</pre>
+                </div>
+            </div>
+
+            <!-- ───────────────────────────────── GEN IMAGE -->
+            <div class="doc-section">
+                <div id="gen-image" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">4</span>
+                    <h2 class="section-title">Gerar uma Imagem</h2>
+                </div>
+                <p class="section-desc">A geração de imagem é <strong style="color:var(--text)">síncrona</strong> — você envia o prompt e a resposta já traz o resultado pronto (em poucos segundos).</p>
+
+                <div class="info-box blue">
+                    <span class="box-icon">image</span>
+                    <div>
+                        <div class="box-title">Image-to-Image</div>
+                        <div class="box-text">Para editar uma imagem existente, inclua o campo <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">inputImage</code> com a imagem em base64. O modelo usará sua imagem como ponto de partida.</div>
+                    </div>
+                </div>
+
+                <div class="code-wrap">
+                    <div class="code-header">
+                        <span class="code-label">POST /api/generations/image</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                    <pre><span class="c">// Requisição</span>
+{
+  <span class="n">"prompt"</span>: <span class="s">"A snow leopard on a frozen mountain, macro lens, cinematic"</span>,
+  <span class="n">"aspectRatio"</span>: <span class="s">"16:9"</span>,          <span class="c">// opcional</span>
+  <span class="n">"inputImage"</span>: <span class="s">"data:image/..."</span>,  <span class="c">// opcional (base64)</span>
+  <span class="n">"sessionId"</span>: <span class="s">"session-abc123"</span>    <span class="c">// opcional</span>
+}
+
+<span class="c">// Resposta</span>
+{
+  <span class="n">"success"</span>: <span class="k">true</span>,
+  <span class="n">"image"</span>: <span class="s">"/api/generations/42/media"</span>,
+  <span class="n">"generationId"</span>: <span class="v">42</span>,
+  <span class="n">"title"</span>: <span class="s">"A snow leopard on a frozen..."</span>
+}</pre>
+                </div>
+                <p style="font-size:13px;color:var(--muted)">Use o valor de <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">image</code> diretamente como <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">src</code> de um elemento <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">&lt;img&gt;</code> para exibir o resultado.</p>
+            </div>
+
+            <!-- ───────────────────────────────── GEN VIDEO -->
+            <div class="doc-section">
+                <div id="gen-video" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">5</span>
+                    <h2 class="section-title">Gerar um Vídeo</h2>
+                </div>
+                <p class="section-desc">A geração de vídeo é <strong style="color:var(--text)">assíncrona</strong> — pode levar de alguns segundos a alguns minutos. O endpoint retorna imediatamente um <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">generationId</code> que você usa para acompanhar o progresso.</p>
+
+                <div class="step-list">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-body">
+                            <div class="step-title">Iniciar a geração</div>
+                            <div class="code-wrap">
+                                <div class="code-header">
+                                    <span class="code-label">POST /api/generations/video</span>
+                                    <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                                </div>
+                                <pre>&#123;
+  <span class="n">"prompt"</span>: <span class="s">"Skier carving slopes, slow motion, cinematic 4K"</span>,
+  <span class="n">"aspectRatio"</span>: <span class="s">"16:9"</span>,
+  <span class="n">"inputImage"</span>: <span class="s">"data:image/..."</span>,  <span class="c">// opcional</span>
+  <span class="n">"sessionId"</span>: <span class="s">"session-abc123"</span>
+&#125;
+
+<span class="c">// Resposta imediata</span>
+&#123;
+  <span class="n">"success"</span>: <span class="k">true</span>,
+  <span class="n">"generationId"</span>: <span class="v">15</span>,
+  <span class="n">"status"</span>: <span class="s">"processing"</span>
+&#125;</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ───────────────────────────────── POLLING -->
+            <div class="doc-section">
+                <div id="polling" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">6</span>
+                    <h2 class="section-title">Acompanhar Status do Vídeo</h2>
+                </div>
+                <p class="section-desc">Consulte o status da geração em intervalos regulares. Quando <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">status</code> retornar <code style="font-family:'JetBrains Mono';font-size:12px;color:#34d399">complete</code>, o campo <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">result</code> conterá a URL do vídeo.</p>
+
+                <div class="info-box green">
+                    <span class="box-icon">schedule</span>
+                    <div>
+                        <div class="box-title">Tempo médio</div>
+                        <div class="box-text">Vídeos levam entre <strong style="color:var(--text)">30 segundos e 4 minutos</strong> dependendo do comprimento e complexidade da cena. Faça polling a cada 5 segundos.</div>
+                    </div>
+                </div>
+
+                <div class="code-wrap">
+                    <div class="code-header">
+                        <span class="code-label">Polling de status — JavaScript</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                    <pre><span class="k">async function</span> waitForVideo(generationId, token) &#123;
+  <span class="k">return new</span> Promise((resolve, reject) => &#123;
+    <span class="k">const</span> interval = setInterval(<span class="k">async</span> () => &#123;
+      <span class="k">const</span> res = <span class="k">await</span> fetch(
+        `/api/generations/$&#123;generationId&#125;/status`,
+        &#123; headers: &#123; Authorization: `Bearer $&#123;token&#125;` &#125; &#125;
+      );
+      <span class="k">const</span> data = <span class="k">await</span> res.json();
+
+      <span class="k">if</span> (data.status === <span class="s">'complete'</span>) &#123;
+        clearInterval(interval);
+        resolve(data.result); <span class="c">// URL do vídeo</span>
+      &#125;
+      <span class="k">if</span> (data.status === <span class="s">'error'</span>) &#123;
+        clearInterval(interval);
+        reject(<span class="k">new</span> Error(<span class="s">'Geração falhou'</span>));
+      &#125;
+    &#125;, <span class="v">5000</span>); <span class="c">// Consulta a cada 5s</span>
+  &#125;);
+&#125;
+
+<span class="c">// Uso</span>
+<span class="k">const</span> videoUrl = <span class="k">await</span> waitForVideo(<span class="v">15</span>, token);
+<span class="c">// videoUrl === "/api/generations/15/media"</span></pre>
+                </div>
+            </div>
+
+            <!-- ───────────────────────────────── CHAT -->
+            <div class="doc-section">
+                <div id="chat" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">7</span>
+                    <h2 class="section-title">Sessões de Chat & Histórico</h2>
+                </div>
+                <p class="section-desc">Cada conversa tem um <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">sessionId</code> único. Ao passar esse ID nas gerações, o VisionLabs garante que cada chat mostra apenas <strong style="color:var(--text)">suas próprias criações</strong>, sem misturar conteúdo de outras conversas.</p>
+
+                <div class="step-list">
+                    <div class="step">
+                        <div class="step-num">→</div>
+                        <div class="step-body">
+                            <div class="step-title">Listar todas as sessões do usuário</div>
+                            <div class="code-wrap">
+                                <div class="code-header"><span class="code-label">GET /api/chat/sessions</span></div>
+                                <pre>&#123;
+  <span class="n">"sessions"</span>: [
+    &#123;
+      <span class="n">"session_id"</span>: <span class="s">"session-1234"</span>,
+      <span class="n">"title"</span>: <span class="s">"Primeira mensagem da conversa..."</span>,
+      <span class="n">"last_message"</span>: <span class="s">"2025-03-30T21:00:00Z"</span>
+    &#125;
+  ]
+&#125;</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">→</div>
+                        <div class="step-body">
+                            <div class="step-title">Buscar mensagens de uma sessão</div>
+                            <div class="code-wrap">
+                                <div class="code-header"><span class="code-label">GET /api/chat/messages?sessionId=session-1234</span></div>
+                                <pre>&#123;
+  <span class="n">"messages"</span>: [
+    &#123; <span class="n">"id"</span>: <span class="v">1</span>, <span class="n">"role"</span>: <span class="s">"user"</span>,      <span class="n">"content"</span>: <span class="s">"Gere uma imagem..."</span> &#125;,
+    &#123; <span class="n">"id"</span>: <span class="v">2</span>, <span class="n">"role"</span>: <span class="s">"assistant"</span>, <span class="n">"media_url"</span>: <span class="s">"/api/generations/42/media"</span>,
+                                         <span class="n">"media_type"</span>: <span class="s">"image"</span> &#125;
+  ]
+&#125;</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">→</div>
+                        <div class="step-body">
+                            <div class="step-title">Deletar uma sessão</div>
+                            <div class="step-text">Remove permanentemente a sessão e todas as suas mensagens. Não afeta outros chats.</div>
+                            <div class="code-wrap">
+                                <div class="code-header"><span class="code-label">DELETE /api/chat/sessions/session-1234</span></div>
+                                <pre>&#123; <span class="n">"success"</span>: <span class="k">true</span>, <span class="n">"deleted"</span>: <span class="v">5</span> &#125;</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ───────────────────────────────── ERRORS -->
+            <div class="doc-section">
+                <div id="errors" class="section-anchor"></div>
+                <div class="section-head">
+                    <span class="section-number">8</span>
+                    <h2 class="section-title">Tratamento de Erros</h2>
+                </div>
+                <p class="section-desc">Em caso de erro, a API retorna um JSON com o campo <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">error</code> descrevendo o problema. O HTTP status code indica o tipo de falha.</p>
+
+                <div class="err-wrap">
+                    <table class="err-table">
+                        <thead>
+                            <tr><th>Status</th><th>Significado</th><th>Causa comum</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>401</td>
+                                <td>Não autorizado</td>
+                                <td>Token ausente, expirado ou inválido no header Authorization</td>
+                            </tr>
+                            <tr>
+                                <td>400</td>
+                                <td>Requisição inválida</td>
+                                <td>Campo obrigatório faltando (ex: prompt) ou formato incorreto</td>
+                            </tr>
+                            <tr>
+                                <td>404</td>
+                                <td>Não encontrado</td>
+                                <td>ID de geração ou sessão inexistente, ou já deletado</td>
+                            </tr>
+                            <tr>
+                                <td>500</td>
+                                <td>Erro interno</td>
+                                <td>Falha no servidor ou na API do Google (tente novamente)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="code-wrap" style="margin-top:16px">
+                    <div class="code-header"><span class="code-label">Exemplo de resposta de erro</span></div>
+                    <pre>&#123;
+  <span class="n">"error"</span>: <span class="s">"Token inválido ou expirado"</span>,
+  <span class="n">"status"</span>: <span class="v">401</span>
+&#125;</pre>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer>
+        <div class="footer-inner">
+            <p class="footer-copy">© 2025 VisionLabs. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/reference">Reference</a>
+                <a href="/docs">API</a>
+                <a href="/">Workspace</a>
+            </div>
+        </div>
+    </footer>
+
+    <script is:inline>
+        // Copiar código
+        function copyCode(btn) {
+            const pre = btn.closest('.code-wrap').querySelector('pre');
+            navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+                btn.textContent = '✓ Copiado';
+                btn.style.color = '#34d399';
+                setTimeout(() => { btn.textContent = 'Copiar'; btn.style.color = ''; }, 2000);
+            });
+        }
+
+        // Highlight da sidebar ao scrollar
+        const sections = document.querySelectorAll('.section-anchor');
+        const links = document.querySelectorAll('.sidebar-link');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    links.forEach(l => l.classList.remove('active'));
+                    const active = document.querySelector(`.sidebar-link[href="#${e.target.id}"]`);
+                    if (active) active.classList.add('active');
+                }
+            });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+        sections.forEach(s => observer.observe(s));
+    </script>
+</body>
+</html>

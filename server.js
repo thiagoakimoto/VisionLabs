@@ -5,6 +5,25 @@ dotenv.config();
 
 const app = express();
 
+// CORS — permite que o frontend na Vercel acesse a API
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const allowed = [
+        'http://localhost:4321',
+        'http://localhost:3000',
+        process.env.FRONTEND_URL, // ex: https://meu-projeto.vercel.app
+    ].filter(Boolean);
+    
+    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Range');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
+
 // Aumenta o limite para aceitar imagens grandes em base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -40,7 +59,7 @@ app.use('/api/generations', authMiddleware, require('./api/generations.js'));
 app.use('/api/chat', authMiddleware, require('./api/chat.js'));
 app.use('/api/settings', authMiddleware, require('./api/settings.js'));
 
-// Error handler global — garante que erros não tratados retornem JSON
+// Error handler global
 app.use((err, _req, res, _next) => {
     console.error('[Unhandled error]', err);
     if (!res.headersSent) {
@@ -48,16 +67,13 @@ app.use((err, _req, res, _next) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
+// Roda localmente (dev); na Vercel o módulo é exportado abaixo
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`🚀 Server is running at http://localhost:${PORT}`);
+    });
+}
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running at http://localhost:${PORT}`);
-  console.log(`🌐 API endpoints:`);
-  console.log(`   - POST /api/auth/register`);
-  console.log(`   - POST /api/auth/login`);
-  console.log(`   - POST /api/generations/image`);
-  console.log(`   - POST /api/generations/video`);
-  console.log(`   - GET  /api/generations`);
-  console.log(`   - GET  /api/chat/messages`);
-  console.log(`   - GET  /api/settings`);
-});
+// Exporta o app para a Vercel usar como Serverless Function
+module.exports = app;
