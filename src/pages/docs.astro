@@ -433,19 +433,19 @@
                         <span class="code-label">JavaScript · fetch</span>
                         <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
                     </div>
-                    <pre><span class="k">const</span> token = localStorage.getItem(<span class="s">'visionlabs_token'</span>);
+                                        <pre><span class="k">const</span> token = localStorage.getItem(<span class="s">'visionlabs_token'</span>);
 
-<span class="k">const</span> response = <span class="k">await</span> fetch(<span class="s">'/api/generations/image'</span>, {
-  method: <span class="s">'POST'</span>,
-  headers: {
-    <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span>,
-    <span class="s">'Authorization'</span>: `Bearer ${token}`
-  },
-  body: JSON.stringify({
-    prompt: <span class="s">'Aerial view of mountain peaks at golden hour, cinematic 4K'</span>,
-    aspectRatio: <span class="s">'16:9'</span>
-  })
-});
+<span class="k">const</span> response = <span class="k">await</span> fetch(<span class="s">'/api/generations/image'</span>, &#123;
+    method: <span class="s">'POST'</span>,
+    headers: &#123;
+        <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span>,
+        <span class="s">'Authorization'</span>: `Bearer &#36;&#123;token&#125;`
+    &#125;,
+    body: JSON.stringify(&#123;
+        prompt: <span class="s">'Aerial view of mountain peaks at golden hour, cinematic 4K'</span>,
+        aspectRatio: <span class="s">'16:9'</span>
+    &#125;)
+&#125;);
 
 <span class="k">const</span> data = <span class="k">await</span> response.json();</pre>
                 </div>
@@ -473,21 +473,21 @@
                         <span class="code-label">POST /api/generations/image</span>
                         <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
                     </div>
-                    <pre><span class="c">// Requisição</span>
-{
-  <span class="n">"prompt"</span>: <span class="s">"A snow leopard on a frozen mountain, macro lens, cinematic"</span>,
-  <span class="n">"aspectRatio"</span>: <span class="s">"16:9"</span>,          <span class="c">// opcional</span>
-  <span class="n">"inputImage"</span>: <span class="s">"data:image/..."</span>,  <span class="c">// opcional (base64)</span>
-  <span class="n">"sessionId"</span>: <span class="s">"session-abc123"</span>    <span class="c">// opcional</span>
-}
+                                        <pre><span class="c">// Requisição</span>
+&#123;
+    <span class="n">"prompt"</span>: <span class="s">"A snow leopard on a frozen mountain, macro lens, cinematic"</span>,
+    <span class="n">"aspectRatio"</span>: <span class="s">"16:9"</span>,          <span class="c">// opcional</span>
+    <span class="n">"inputImage"</span>: <span class="s">"data:image/..."</span>,  <span class="c">// opcional (base64)</span>
+    <span class="n">"sessionId"</span>: <span class="s">"session-abc123"</span>    <span class="c">// opcional</span>
+&#125;
 
 <span class="c">// Resposta</span>
-{
-  <span class="n">"success"</span>: <span class="k">true</span>,
-  <span class="n">"image"</span>: <span class="s">"/api/generations/42/media"</span>,
-  <span class="n">"generationId"</span>: <span class="v">42</span>,
-  <span class="n">"title"</span>: <span class="s">"A snow leopard on a frozen..."</span>
-}</pre>
+&#123;
+    <span class="n">"success"</span>: <span class="k">true</span>,
+    <span class="n">"image"</span>: <span class="s">"/api/generations/42/media"</span>,
+    <span class="n">"generationId"</span>: <span class="v">42</span>,
+    <span class="n">"title"</span>: <span class="s">"A snow leopard on a frozen..."</span>
+&#125;</pre>
                 </div>
                 <p style="font-size:13px;color:var(--muted)">Use o valor de <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">image</code> diretamente como <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">src</code> de um elemento <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--orange)">&lt;img&gt;</code> para exibir o resultado.</p>
             </div>
