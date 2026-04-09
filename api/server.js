@@ -43,21 +43,21 @@ const v2e = (handler) => async (req, res) => {
   }
 };
 
-const authMiddleware = require('./lib/authMiddleware');
+const authMiddleware = require('../lib/authMiddleware');
 
 // Rotas públicas (sem auth)
-app.all('/api', v2e(require('./api/index.js')));
-app.use('/api/auth', v2e(require('./api/auth.js')));
+app.all('/api', v2e(require('./index.js')));
+app.use('/api/auth', v2e(require('./auth.js')));
 
 // Rotas legadas de geração direta (sem auth, para compatibilidade externa)
-app.all('/api/edit-image', v2e(require('./api/edit-image.js')));
-app.all('/api/generate-video', v2e(require('./api/generate-video.js')));
-app.all('/api/extend-video', v2e(require('./api/extend-video.js')));
+app.all('/api/edit-image', v2e(require('./edit-image.js')));
+app.all('/api/generate-video', v2e(require('./generate-video.js')));
+app.all('/api/extend-video', v2e(require('./extend-video.js')));
 
 // Rotas protegidas (requerem JWT)
-app.use('/api/generations', authMiddleware, require('./api/generations.js'));
-app.use('/api/chat', authMiddleware, require('./api/chat.js'));
-app.use('/api/settings', authMiddleware, require('./api/settings.js'));
+app.use('/api/generations', authMiddleware, require('./generations.js'));
+app.use('/api/chat', authMiddleware, require('./chat.js'));
+app.use('/api/settings', authMiddleware, require('./settings.js'));
 
 // Error handler global
 app.use((err, _req, res, _next) => {

@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Middleware para edição de imagem e geração de vídeo com Google GenAI",
   "scripts": {
-    "start": "node server.js",
-    "start:api": "node server.js",
-    "dev:api": "node --watch server.js",
+    "start": "node api/server.js",
+    "start:api": "node api/server.js",
+    "dev:api": "node --watch api/server.js",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
